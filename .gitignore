@@ -1,3 +1,4 @@
+# C ignore rules
 # Object files
 *.o
 *.ko
@@ -32,7 +33,7 @@
 *.dSYM/
 *.su
 
-# Xilinx ISE generated files
+# Xilinx ISE ignore rules
 # intermediate build files
 *.bgn
 *.bld
