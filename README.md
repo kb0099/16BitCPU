@@ -1,4 +1,4 @@
-# 16-bit_computer
+# 16-bit Computer
 
 Tim Dorney
 
