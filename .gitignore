@@ -35,7 +35,6 @@
 # Xilinx ISE generated files
 # intermediate build files
 *.bgn
-*.bit
 *.bld
 *.cmd_log
 *.drc
