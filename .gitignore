@@ -35,13 +35,17 @@
 
 # Xilinx ISE ignore rules
 # intermediate build files
+*.asy
 *.bgn
 *.bld
 *.cmd_log
 *.cgc
+*.cgp
 *.drc
 *.ll
+*.log
 *.lso
+*.mif
 *.msd
 *.msk
 *.ncd
@@ -56,14 +60,18 @@
 *.rbd
 *.stx
 *.syr
+*.tcl
 *.twr
 *.twx
 *.unroutes
 *.ut
+*.veo
+*.xco
 *.xpi
 *.xst
 *_bitgen.xwbt
 *_envsettings.html
+*_flist.txt
 *_map.map
 *_map.mrp
 *_map.ngm
@@ -101,3 +109,4 @@ xst/
 _ngo/
 _xmsgs/
 tmp/
+ram32Kb/
