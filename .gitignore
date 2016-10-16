@@ -38,6 +38,7 @@
 *.bgn
 *.bld
 *.cmd_log
+*.cgc
 *.drc
 *.ll
 *.lso
@@ -99,3 +100,4 @@ xlnx_auto_0_xdb/
 xst/
 _ngo/
 _xmsgs/
+tmp/
