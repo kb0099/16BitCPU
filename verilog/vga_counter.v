@@ -23,7 +23,7 @@ module vga_counter(
 	input reset,
 	input clk,
 	output reg [9:0] pixel_counter,
-	output reg [9:0] line_counter,
+	output reg [8:0] line_counter,
 	output reg [1:0] sub_pixel_counter
     );
 	 
@@ -31,7 +31,7 @@ module vga_counter(
 	parameter PIXELS = 800; // for a visible resolution width of 640 pixels
 	parameter PIXEL_WIDTH = 10; // bit width pixel_counter
 	parameter LINES = 525; // for a visible resolution width of 480 pixels
-	parameter LINE_WIDTH = 10; // bit width of line_counter
+	parameter LINE_WIDTH = 9; // bit width of line_counter
 	
 	parameter PIXEL_COUNTER_START = {PIXEL_WIDTH{1'b0}};
 	parameter LINE_COUNTER_START = {LINE_WIDTH{1'b0}};

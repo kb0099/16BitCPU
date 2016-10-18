@@ -24,7 +24,7 @@ module vga_output(
 	input clk,
 	input [7:0] color_in, // from pixel_generator
 	input [9:0] pixel_counter, // from vga_counter
-	input [9:0] line_counter, // from vga_counter
+	input [8:0] line_counter, // from vga_counter
 	output reg [7:0] color, // rrr_ggg_bb
 	output reg HSync,
 	output reg VSync

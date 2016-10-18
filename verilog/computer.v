@@ -38,7 +38,7 @@ module computer(
 	clkBuffer _clkBuffer(ext_clk, clk);
 	
 	memController _memController(enable, reset, clk, addr, data, we, data_out, vga_addr, vga_data);
-	vga_display _vga_display(enable, reset, clk, color, HSync, VSync);
+	vga_display _vga_display(enable, reset, clk, color, HSync, VSync, vga_data, vga_addr);
 
 	assign on = enable;
 	
