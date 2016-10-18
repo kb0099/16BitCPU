@@ -39,9 +39,11 @@
 *.bgn
 *.bld
 *.cmd_log
+*.cmd
 *.cgc
 *.cgp
 *.drc
+*.ini
 *.ll
 *.log
 *.lso
@@ -66,9 +68,11 @@
 *.unroutes
 *.ut
 *.veo
+*.wdb
 *.xco
 *.xpi
 *.xst
+*.xmsgs
 *_bitgen.xwbt
 *_envsettings.html
 *_flist.txt
@@ -110,3 +114,4 @@ _ngo/
 _xmsgs/
 tmp/
 ram32Kb/
+isim/
