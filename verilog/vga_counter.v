@@ -52,7 +52,7 @@ module vga_counter(
 			sub_pixel_counter <= sub_pixel_counter + 1'b1;
 			
 			if (sub_pixel_counter == {SUB_PIXEL_WIDTH{1'b1}}) begin // "clock divider" - every 4 clock ticks
-				sub_pixel_counter <= {SUB_PIXEL_WIDTH{1'b0}}; // reset sub_pixel_counter
+				//sub_pixel_counter <= {SUB_PIXEL_WIDTH{1'b0}}; // reset sub_pixel_counter
 				if (pixel_counter == PIXELS - 1'b1) begin // if pixel_counter is at the end of the line
 					pixel_counter <= {PIXEL_WIDTH{1'b0}}; // reset pixel_counter
 					line_counter <= line_counter + 1'b1; // move down one line
