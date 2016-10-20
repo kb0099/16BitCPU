@@ -27,7 +27,9 @@ module memController(
 	input we, // write-enable, write data_in to addr
 	output [15:0] data_out,
 	input [14:0] vga_addr,
-   output [15:0] vga_data_out
+   output [15:0] vga_data_out,
+	input [13:0] instr_addr,
+	output [15:0] instr_out
     );
 	 
 	// -------------------------------------------------
@@ -47,9 +49,9 @@ module memController(
 	// memory area starting address (use size to define)
 	parameter ADDR_TEXT   = 14'd0;
 	parameter ADDR_GLYPH   = ADDR_TEXT + SIZE_TEXT;
-	parameter ADDR_INSTR  = ADDR_OUTPUT + SIZE_OUTPUT;
-
-	ram32Kb _ram32Kb(clk, we   , addr    , data_in, data_out,
+	
+	instructionROM _instrROM(clk, 1'b0, instr_addr, 15'd0, instr_out);
+	dataRAM _dataRAM(clk, we   , addr    , data_in, data_out,
 						  clk, 1'b0 , vga_addr,   16'd0, vga_data_out);
 						  
 endmodule

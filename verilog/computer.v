@@ -34,10 +34,12 @@ module computer(
 	wire [15:0] data_out;
 	wire [14:0] vga_addr;
 	wire [15:0] vga_data;
+	wire [13:0] instr_addr;
+	wire [15:0] instr_data;
 	 
 	clkBuffer _clkBuffer(ext_clk, clk);
 	
-	memController _memController(enable, reset, clk, addr, data, we, data_out, vga_addr, vga_data);
+	memController _memController(enable, reset, clk, addr, data, we, data_out, vga_addr, vga_data, instr_addr, instr_data);
 	vga_display _vga_display(enable, reset, clk, color, HSync, VSync, vga_data, vga_addr);
 
 	assign on = enable;
