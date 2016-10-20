@@ -58,7 +58,7 @@ module memController(
 	parameter ADDR_INSTR  = ADDR_OUTPUT + SIZE_OUTPUT;
 	parameter ADDR_STACK  = ADDR_INSTR + SIZE_INSTR;
 
-	ram32Kb _ram32Kb(clk, we, addr    , data_in, data_out,
-						  clk, 1'b0 , vga_addr, 16'd0  , vga_data_out);
+	ram32Kb _ram32Kb(clk, we   , addr    , data_in, data_out,
+						  clk, 1'b0 , vga_addr,   16'd0, vga_data_out);
 						  
 endmodule

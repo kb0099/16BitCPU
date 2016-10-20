@@ -48,18 +48,22 @@ module pixel_generator(
 	parameter ADDR_TEXT   = 14'd0;
 	parameter ADDR_GLYPH   = ADDR_TEXT + SIZE_TEXT;
 
-	wire foreground;
+   reg foreground;
 	
 	reg [15:0] pixel_select = 16'd0;
 	 
 	// sequential logic
 	always@(posedge clk) begin
 		if (reset || !enable)
-			color <= 8'b00000000; // black	
-		else if (pixel_state == DRAW && foreground)
-			color <= 8'b11111111;
-		else
-			color <= 8'b00000000;			
+			color <= 8'b00000000; // black
+		else if (pixel_state == WAIT)
+			foreground <= pixel_select[0];
+		else if (pixel_state == DRAW) begin
+			if (foreground)
+				color <= 8'b11111111;	
+			else
+				color <= 8'b00000000;
+		end
 	end
 	
 	// combinational logic
@@ -74,7 +78,7 @@ module pixel_generator(
 				pg_addr = ADDR_GLYPH + ((pg_data[7:0] << 2'd2) + line_counter[2:1]);
 				pixel_select = 1'b0;
 			end
-			DRAW: begin
+			WAIT: begin
 				pg_addr = ADDR_GLYPH + ((pg_data[7:0] << 2'd2) + line_counter[2:1]);
 				if (line_counter[0] == 1'b0)
 					pixel_select = pg_data >> ( 4'd8 + pixel_counter[2:0] );
@@ -88,7 +92,5 @@ module pixel_generator(
 		endcase
 			
 	end
-	
-	assign foreground = pixel_select[0];
 
 endmodule

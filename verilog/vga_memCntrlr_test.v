@@ -55,7 +55,7 @@ module vga_memCntrlr_test;
 		ext_clk = 0;
 
 		// Wait 100 ns for global reset to finish
-		#100;
+		#5;
 		
 		enable = 1;
         
