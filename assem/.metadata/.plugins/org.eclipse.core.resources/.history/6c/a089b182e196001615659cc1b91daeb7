@@ -1,0 +1,36 @@
+package assem;
+
+public class MemInstruction extends Instruction {
+
+	final private byte bank;
+	final private String srcReg;
+	final private String destReg;
+
+	public MemInstruction(Instr instruction, String srcReg, String destReg, String bank) {
+		super(instruction);
+		this.bank = Byte.parseByte(bank);
+		this.srcReg = srcReg;
+		this.destReg = destReg;
+	}
+
+	public byte getBank() {
+		return bank;
+	}
+
+	public String getSrcReg() {
+		return srcReg;
+	}
+
+	public String getDestReg() {
+		return destReg;
+	}
+
+	public String toString() {
+		int opCode = 2;
+		int instruction = DecodeInstruction(this.getInstruction());
+		int srcReg = DecodeRegister(this.srcReg);
+		int destReg = DecodeRegister(this.destReg);
+
+		return String.format("%02x%01x%05x%04x%04x", opCode, instruction, bank, srcReg, destReg);
+	}
+}

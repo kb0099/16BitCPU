@@ -1,0 +1,22 @@
+package assem;
+
+public class JmpInstruction extends Instruction {
+
+	final private short address;
+
+	public JmpInstruction(Instr instruction, String address) {
+		super(instruction);
+		this.address = Short.parseShort(address);
+	}
+
+	public short address() {
+		return address;
+	}
+
+	public String toString() {
+		int opCode = 3;
+		int instruction = DecodeInstruction(this.getInstruction());
+
+		return String.format("%02x%03x%011x", opCode, instruction, address);
+	}
+}
