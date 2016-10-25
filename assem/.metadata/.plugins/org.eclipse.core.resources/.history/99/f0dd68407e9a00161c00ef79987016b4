@@ -1,0 +1,12 @@
+package assem;
+
+public class Register {
+	
+	private short regNumber;
+	private short value;
+	
+	public Register(short regNumber, short value) {
+		
+	}
+
+}

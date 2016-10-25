@@ -2,18 +2,18 @@ package assem;
 
 public class MemInstruction extends Instruction {
 
-	final private byte bank;
+	final private short bank;
 	final private String srcReg;
-	final private String destReg;
+	final private String memReg;
 
-	public MemInstruction(Instr instruction, String srcReg, String destReg, String bank) {
+	public MemInstruction(Instr instruction, String srcReg, String memReg, String bank) {
 		super(instruction);
-		this.bank = Byte.parseByte(bank);
+		this.bank = ParseImmediate(bank);
 		this.srcReg = srcReg;
-		this.destReg = destReg;
+		this.memReg = memReg;
 	}
 
-	public byte getBank() {
+	public short getBank() {
 		return bank;
 	}
 
@@ -21,8 +21,8 @@ public class MemInstruction extends Instruction {
 		return srcReg;
 	}
 
-	public String getDestReg() {
-		return destReg;
+	public String getMemReg() {
+		return memReg;
 	}
 
 	public String toString() {
@@ -32,11 +32,11 @@ public class MemInstruction extends Instruction {
 			instruction = "0";
 		else
 			instruction = "1";
-		String srcReg = DecodeRegister(this.srcReg);
-		String destReg = DecodeRegister(this.destReg);
-		String bank = String.format("%5s", Integer.toBinaryString(this.bank)).replace(' ', '0');
+		String srcReg = ConvertRegToBinary(DecodeRegister(this.srcReg));
+		String memReg = ConvertRegToBinary(DecodeRegister(this.memReg));
+		String bank = ConvertImmToBinary(this.bank, 5);
 
-		return opCode + instruction + bank + srcReg + destReg;
+		return opCode + instruction + srcReg + memReg + bank;
 		
 		//return String.format("%02x%01x%05x%04x%04x", opCode, instruction, bank, srcReg, destReg);
 	}

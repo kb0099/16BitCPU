@@ -1,0 +1,7 @@
+package assem;
+
+public class Register {
+	
+	final private short regNumber;
+
+}

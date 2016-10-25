@@ -1,0 +1,22 @@
+package assem;
+
+public class Register {
+	
+	private short regNumber;
+	private short value;
+	final short bitWidth = 16;
+	
+	public Register(short regNumber, short value) {
+		this.regNumber = regNumber;
+		this.value = value;
+	}
+	
+	private setValue(short value) {
+		if (value > )
+	}
+	
+	public String toString() {
+		return "$r" + regNumber;
+	}
+
+}

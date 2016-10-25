@@ -1,9 +1,9 @@
 INDEX VERSION 1.129+/Users/Austin/Box Sync/school/2016-3_fall/cs_3710/16-bit_computer/assem/.metadata/.plugins/org.eclipse.jdt.core
 3302703152.index
-1271342938.index
-2530618097.index
-2545238116.index
 2791527970.index
+2545238116.index
+2530618097.index
+1271342938.index
 1384487945.index
 2087539873.index
 3266567714.index
@@ -22,6 +22,6 @@ INDEX VERSION 1.129+/Users/Austin/Box Sync/school/2016-3_fall/cs_3710/16-bit_com
 156905802.index
 1833648217.index
 3688561912.index
-3388682156.index
 1819685514.index
+3388682156.index
 2649669512.index
