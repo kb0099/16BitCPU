@@ -20,6 +20,7 @@ public class Assemble {
 	// lines list position constants
 	private static final int LINE_NUMBER_POSITION 	= 0; // position in lines list (source line number)
 	private static final int LABEL_POSITION 	  	= 1; // position in lines list
+	private static final int FUNCTION_POSITION 	  	= 2; // position in lines list
 	
 	// regex patterns
 	private static final String LABEL_FORMAT 		= "^\\D.*"; // labels cannot start with a digit
@@ -36,10 +37,39 @@ public class Assemble {
 	private static final int BANK_BIT_WIDTH 		=  5; // max bank size = 2^5
 	private static final int REGISTER_BIT_WIDTH 	= 16; // max register size = 2^16
 	
+	// instruction mappings
+	private static final Map<String, String> functions = new HashMap<>();
+	static {
+		String rType = convertImmToBinary(0, 2);
+		String iType = convertImmToBinary(1, 2);
+		String mType = convertImmToBinary(2, 2);
+		String jType = convertImmToBinary(3, 2);
+		
+		// register type instructions
+		functions.put("add", rType + "000");
+		functions.put("sub", rType + "001");
+		// immediate type instructions
+		functions.put("addi", iType + "000");
+		functions.put("li", iType + "111");
+		// memory type instructions
+		functions.put("read", mType + "0");
+		functions.put("write", mType + "1");
+		// jump type instructions
+		functions.put("jl", jType + "000");
+	}
+	
 	// assembler variables
 	private static List<List<String>> lines = new ArrayList<>(); // list of lines
 	private static List<String> output = new ArrayList<>(); // list of final bits to output
 	private static Map<String, Integer> labels = new HashMap<>(); // labels mapped to line address
+	
+	// help description
+	private static final String HELP = "Assemble - TEAK assembler v0.1 \n\n"
+									 + "usage: Assemble [.teak file] [.coe output file]? [output radix]? \n\n"
+									 + "arguments: \n"
+									 + "\t [.teak file] \t\t the name of a .teak assembly file to assemble into machine code (bits) \n"
+									 + "\t [.coe output file] \t (optional) the name of a .coe file to write machine code to (defaults to 'mem.coe') \n"
+									 + "\t [output radix] \t (optional) bit radix to use, 2 (binary, default) or 16 (hexadecimal) \n";
 
 	/*
 	|--------------------------------------------------------------------------
@@ -47,35 +77,56 @@ public class Assemble {
 	|--------------------------------------------------------------------------
 	|
 	| Assembler entry point
+	| Arg options:
+	|	arg0 = assembly file input (required)
+	| 	arg1 = output memory file (optional, default = mem.coe)
+	|	arg2 = output memory radix (optional, default = 2 [binary])
 	|
 	*/
 	
 	public static void main(String[] args) {
 		
 		String assemblyFile = null;
-		if (args.length != 1) {
-			System.out.println("Please input an assembly file");
-			return;
+		String outputFile = "mem.coe"; // default
+		int outputRadix = 2; // default
+		
+		// set parameters based on input arguments
+		switch(args.length) {
+			case 0:
+				System.out.println(HELP); // print help description
+				return;
+			case 3:
+				outputRadix = Integer.parseInt(args[2]);
+			case 2:
+				outputFile = args[1];
+			case 1:
+				assemblyFile = args[0];
+				break;
 		}
-		else {
-			assemblyFile = args[0];
-		}
 		
-		tokenize(assemblyFile);
+		System.out.format("Assembling '%s' into '%s' (using radix %d) \n", assemblyFile, outputFile, outputRadix);
+		long start = System.currentTimeMillis(); // time execution time and report
 		
-		initialize();
-		map();
-		decode();
+		// work
+		tokenize(assemblyFile); // split each line into tokens (labels, functions, registers, etc.)
+		initialize(); // run any special .initializers before anything else
+		map(); // map labels to a corresponding label address
+		encodeSimple(); // encode instructions and operators into machine code (bits)
+		generateMemory(outputFile, outputRadix); // write resulting machine code to .coe file
 		
-		for (List<String> l : lines) {
-			System.out.println(l);
-		}
+		long end = System.currentTimeMillis();
+		double time = (end-start)/1000d; // display execution time in seconds
+		System.out.format("Done. \nWrote %d words to '%s' in %.3fs \n", output.size(), outputFile, time);
 		
-
-		labels.forEach((k,v)->System.out.println(k + ": " + v));
-		
-		System.out.format("%s\n", convertImmToBinary(7, 11));
-		
+//		for (List<String> l : lines) {
+//			System.out.println(l);
+//		}
+//		
+//
+//		labels.forEach((k,v)->System.out.println(k + ": " + v));
+//		
+//		System.out.format("%s\n", convertImmToBinary(7, 11));
+//		
 //		int i = 0;
 //		for (String o : output)
 //			System.out.println(i++ + ": " + o);
@@ -93,8 +144,62 @@ public class Assemble {
 	|
 	*/
 	
-	private static void decode() {
+	/**
+	 * Processes each line and properly encodes each instruction, immediate,
+	 * register, and address into a bit string. Simple implementation for use
+	 * with barebones core
+	 */
+	private static void encodeSimple() {
 		
+		for (List<String> l : lines) {
+			if (l.size() > 2) {
+				String function = l.get(FUNCTION_POSITION);
+				
+				switch(function) {
+					case "read":
+						output.add(convertImmToBinary(0, 16));
+						break;
+					case "incr":
+						output.add(convertImmToBinary(2, 16));
+						break;
+					case "write":
+						output.add(convertImmToBinary(1, 16));
+						break;
+					case "jump":
+						output.add(convertImmToBinary(3, 16));
+						break;
+				}
+			}
+		}
+	}
+	
+	/**
+	 * Processes each line and properly encodes each instruction, immediate,
+	 * register, and address into a bit string. 
+	 */
+	private static void encode() {
+		for (List<String> l : lines) {
+			if (l.size() > 2) {
+				String function = l.get(FUNCTION_POSITION);
+				
+				switch(function) {
+					case "add":
+						break;
+					case "sub":
+						break;
+					case "addi":
+						break;
+					case "li":
+						break;
+					case "lw":
+						break;
+					case "sw":
+						break;
+					case "jl":
+						break;
+				}
+			}
+		}
 	}
 
 	/**
@@ -106,7 +211,6 @@ public class Assemble {
 		// open file and parse
 		try {
 			// open file
-			System.out.println("Opening " + assemblyFile + "...\n");
 			FileReader fileReader = new FileReader(assemblyFile);
 			BufferedReader reader = new BufferedReader(fileReader);
 			
@@ -238,6 +342,36 @@ public class Assemble {
 	| the final machine code (bits) that will be output to the .coe file
 	|
 	*/
+	
+	public static void generateMemory(String outputFile, int radix) {
+		
+		try {
+			PrintWriter out = new PrintWriter(new File(outputFile));
+			out.println ("memory_initialization_radix=" + radix + ";");
+			out.println ("memory_initialization_vector=");
+			out.println();
+			
+			int memSize = output.size();
+			
+			for (String bitline : output) {
+				if (radix == 16)  // hex
+					out.print(binaryToHex(bitline));
+				else 
+					out.print(bitline);
+				
+				if (output.indexOf(bitline) == memSize-1) 
+					out.println(";"); // print semi-colon after last memory address
+				else 
+					out.println(",");
+			}
+			
+			out.close();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		}
+		
+		return;
+	}
 	
 	/**
 	 * Generates ascii glyphs based on given glyphFile
@@ -429,6 +563,17 @@ public class Assemble {
 		}
 		
 		return binary;
+	}
+	
+	/**
+	 * Converts a binary string to a hex string
+	 * Ex. 1111 => 0xF
+	 * @param binary
+	 * @return String hex string
+	 */
+	public static String binaryToHex(String binary) {
+		int decimal = Integer.parseInt(binary, 2);
+		return String.format("%4s", Integer.toString(decimal, 16)).replace(' ', '0');
 	}
 
 }

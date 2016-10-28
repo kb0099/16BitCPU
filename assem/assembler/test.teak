@@ -5,7 +5,7 @@
 .teak // beginning of assembly code
 
 start:	read 		 // 0
-	memIncrAddToReg // 2
+	incr		 // 2
 	write 		 // 1
 	jump		 // 3
 
