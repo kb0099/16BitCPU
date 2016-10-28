@@ -38,7 +38,7 @@ module Core(
    always@(posedge clock)
    begin
       clockLimit <= clockLimit + 1'b1;
-      if (clockLimit == 10) begin
+      //if (clockLimit == 10) begin
          if (inEx == 0) begin
          //addrout = startaddr;
          inEx <= 1;
@@ -49,10 +49,10 @@ module Core(
       else if (CI == 0) begin 
          $display("INSTRUCTION IN: %d", datain);
          case (datain)
-            0: CI <= 3'b001; // read
-            1: CI <= 3'b010; // write
-            2: CI <= 3'b011; // add
-            3: CI <= 3'b100; // jump
+            0: CI = 3'b001; // read
+            1: CI = 3'b010; // write
+            2: CI = 3'b011; // add
+            65347: CI = 3'b100; // jump
          endcase
       end
 
@@ -61,22 +61,22 @@ module Core(
             1: begin // read 1
                //addrout <= dataAddr;
                we <= 1'b0;
-               CI <= 3'b110;
+               CI = 3'b110;
                $display("READ1");
                end
             2: begin // write
                dataout <= currentData;
                //addrout <= dataAddr;
                we <= 1'b1;
-               CI <= 3'b100;
-               //inEx <= 1'b0;
-               //instrAddr <= instrAddr + 1'b1;
+               CI = 3'b000;
+               inEx <= 1'b0;
+               instrAddr <= instrAddr + 1'b1;
                $display("WRITE");
                end
             3: begin // add
                currentData <= currentData + 1'b1;
                dataAddr <= dataAddr + 1'b1;
-               CI <= 3'b000;
+               CI = 3'b000;
                inEx <= 1'b0;
                we <= 1'b0;
                instrAddr <= instrAddr + 1'b1;
@@ -84,7 +84,7 @@ module Core(
                end
             4: begin // jump/reset
                instrAddr <= startAddr;
-               CI <= 3'b000;
+               CI = 3'b000;
                $display("JUMP");
                inEx <= 1'b0;
                we <= 1'b0;
@@ -92,17 +92,17 @@ module Core(
                end
             5: begin // read 3
                currentData <= datain;
-               CI <= 3'b000;
+               CI = 3'b000;
                inEx <= 1'b0;
                instrAddr <= instrAddr + 1'b1;
                $display("READ2");
                end
             6: begin // read 2 (wait)
-               CI <= 3'b101;
+               CI = 3'b101;
                end
           endcase
        end
-    end
+    //end
   end
   
   always@*
