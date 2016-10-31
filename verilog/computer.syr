@@ -1,0 +1,651 @@
+Release 14.7 - xst P.20131013 (nt64)
+Copyright (c) 1995-2013 Xilinx, Inc.  All rights reserved.
+--> Parameter TMPDIR set to xst/projnav.tmp
+
+
+Total REAL time to Xst completion: 0.00 secs
+Total CPU time to Xst completion: 0.13 secs
+ 
+--> Parameter xsthdpdir set to xst
+
+
+Total REAL time to Xst completion: 0.00 secs
+Total CPU time to Xst completion: 0.13 secs
+ 
+--> Reading design: computer.prj
+
+TABLE OF CONTENTS
+  1) Synthesis Options Summary
+  2) HDL Parsing
+  3) HDL Elaboration
+  4) HDL Synthesis
+       4.1) HDL Synthesis Report
+  5) Advanced HDL Synthesis
+       5.1) Advanced HDL Synthesis Report
+  6) Low Level Synthesis
+  7) Partition Report
+  8) Design Summary
+       8.1) Primitive and Black Box Usage
+       8.2) Device utilization summary
+       8.3) Partition Resource Summary
+       8.4) Timing Report
+            8.4.1) Clock Information
+            8.4.2) Asynchronous Control Signals Information
+            8.4.3) Timing Summary
+            8.4.4) Timing Details
+            8.4.5) Cross Clock Domains Report
+
+
+=========================================================================
+*                      Synthesis Options Summary                        *
+=========================================================================
+---- Source Parameters
+Input File Name                    : "computer.prj"
+Ignore Synthesis Constraint File   : NO
+
+---- Target Parameters
+Output File Name                   : "computer"
+Output Format                      : NGC
+Target Device                      : xc6slx16-3-csg324
+
+---- Source Options
+Top Module Name                    : computer
+Automatic FSM Extraction           : YES
+FSM Encoding Algorithm             : Auto
+Safe Implementation                : No
+FSM Style                          : LUT
+RAM Extraction                     : Yes
+RAM Style                          : Auto
+ROM Extraction                     : Yes
+Shift Register Extraction          : YES
+ROM Style                          : Auto
+Resource Sharing                   : YES
+Asynchronous To Synchronous        : NO
+Shift Register Minimum Size        : 2
+Use DSP Block                      : Auto
+Automatic Register Balancing       : No
+
+---- Target Options
+LUT Combining                      : Auto
+Reduce Control Sets                : Auto
+Add IO Buffers                     : YES
+Global Maximum Fanout              : 100000
+Add Generic Clock Buffer(BUFG)     : 16
+Register Duplication               : YES
+Optimize Instantiated Primitives   : NO
+Use Clock Enable                   : Auto
+Use Synchronous Set                : Auto
+Use Synchronous Reset              : Auto
+Pack IO Registers into IOBs        : Auto
+Equivalent register Removal        : YES
+
+---- General Options
+Optimization Goal                  : Speed
+Optimization Effort                : 1
+Power Reduction                    : NO
+Keep Hierarchy                     : No
+Netlist Hierarchy                  : As_Optimized
+RTL Output                         : Yes
+Global Optimization                : AllClockNets
+Read Cores                         : YES
+Write Timing Constraints           : NO
+Cross Clock Analysis               : NO
+Hierarchy Separator                : /
+Bus Delimiter                      : <>
+Case Specifier                     : Maintain
+Slice Utilization Ratio            : 100
+BRAM Utilization Ratio             : 100
+DSP48 Utilization Ratio            : 100
+Auto BRAM Packing                  : NO
+Slice Utilization Ratio Delta      : 5
+
+=========================================================================
+
+
+=========================================================================
+*                          HDL Parsing                                  *
+=========================================================================
+Analyzing Verilog file "\\chips.eng.utah.edu\home\aupayne\16-bit_computer\verilog\vga_output.v" into library work
+Parsing module <vga_output>.
+Analyzing Verilog file "\\chips.eng.utah.edu\home\aupayne\16-bit_computer\verilog\vga_counter.v" into library work
+Parsing module <vga_counter>.
+Analyzing Verilog file "\\chips.eng.utah.edu\home\aupayne\16-bit_computer\verilog\RAMplz.v" into library work
+Parsing module <RAMplz>.
+Analyzing Verilog file "\\chips.eng.utah.edu\home\aupayne\16-bit_computer\verilog\pixel_generator.v" into library work
+Parsing module <pixel_generator>.
+Analyzing Verilog file "\\chips.eng.utah.edu\home\aupayne\16-bit_computer\verilog\vga_display.v" into library work
+Parsing module <vga_display>.
+Analyzing Verilog file "\\chips.eng.utah.edu\home\aupayne\16-bit_computer\verilog\memController.v" into library work
+Parsing module <memController>.
+Analyzing Verilog file "\\chips.eng.utah.edu\home\aupayne\16-bit_computer\verilog\Core.v" into library work
+Parsing module <Core>.
+Analyzing Verilog file "\\chips.eng.utah.edu\home\aupayne\16-bit_computer\verilog\clkBuffer.v" into library work
+Parsing module <clkBuffer>.
+Analyzing Verilog file "\\chips.eng.utah.edu\home\aupayne\16-bit_computer\verilog\computer.v" into library work
+Parsing module <computer>.
+
+=========================================================================
+*                            HDL Elaboration                            *
+=========================================================================
+
+Elaborating module <computer>.
+
+Elaborating module <clkBuffer>.
+
+Elaborating module <IBUFG>.
+
+Elaborating module <BUFG>.
+
+Elaborating module <Core>.
+"\\chips.eng.utah.edu\home\aupayne\16-bit_computer\verilog\Core.v" Line 46. $display instr address: 0
+"\\chips.eng.utah.edu\home\aupayne\16-bit_computer\verilog\Core.v" Line 50. $display INSTRUCTION IN: 0
+"\\chips.eng.utah.edu\home\aupayne\16-bit_computer\verilog\Core.v" Line 65. $display READ1
+"\\chips.eng.utah.edu\home\aupayne\16-bit_computer\verilog\Core.v" Line 74. $display WRITE
+"\\chips.eng.utah.edu\home\aupayne\16-bit_computer\verilog\Core.v" Line 83. $display ADD instr addr: 0
+"\\chips.eng.utah.edu\home\aupayne\16-bit_computer\verilog\Core.v" Line 88. $display JUMP
+"\\chips.eng.utah.edu\home\aupayne\16-bit_computer\verilog\Core.v" Line 98. $display READ2
+
+Elaborating module <memController>.
+
+Elaborating module <RAMplz>.
+WARNING:HDLCompiler:1499 - "\\chips.eng.utah.edu\home\aupayne\16-bit_computer\verilog\RAMplz.v" Line 39: Empty module <RAMplz> remains a black box.
+
+Elaborating module <vga_display>.
+
+Elaborating module <vga_counter>.
+
+Elaborating module <pixel_generator>.
+
+Elaborating module <vga_output>.
+
+=========================================================================
+*                           HDL Synthesis                               *
+=========================================================================
+
+Synthesizing Unit <computer>.
+    Related source file is "\\chips.eng.utah.edu\home\aupayne\16-bit_computer\verilog\computer.v".
+    Summary:
+	no macro.
+Unit <computer> synthesized.
+
+Synthesizing Unit <clkBuffer>.
+    Related source file is "\\chips.eng.utah.edu\home\aupayne\16-bit_computer\verilog\clkBuffer.v".
+    Summary:
+	no macro.
+Unit <clkBuffer> synthesized.
+
+Synthesizing Unit <Core>.
+    Related source file is "\\chips.eng.utah.edu\home\aupayne\16-bit_computer\verilog\Core.v".
+        startAddr = 15'b010010000000000
+    Found 1-bit register for signal <inEx>.
+    Found 3-bit register for signal <CI>.
+    Found 16-bit register for signal <currentData>.
+    Found 15-bit register for signal <instrAddr>.
+    Found 1-bit register for signal <we>.
+    Found 15-bit register for signal <dataAddr>.
+    Found 16-bit register for signal <dataout>.
+    Found 26-bit register for signal <clockLimit>.
+    Found finite state machine <FSM_0> for signal <CI>.
+    -----------------------------------------------------------------------
+    | States             | 7                                              |
+    | Transitions        | 19                                             |
+    | Inputs             | 5                                              |
+    | Outputs            | 5                                              |
+    | Clock              | clock (rising_edge)                            |
+    | Power Up State     | 000                                            |
+    | Encoding           | auto                                           |
+    | Implementation     | LUT                                            |
+    -----------------------------------------------------------------------
+    Found 26-bit adder for signal <clockLimit[25]_GND_5_o_add_1_OUT> created at line 40.
+    Found 16-bit adder for signal <currentData[15]_GND_5_o_add_14_OUT> created at line 77.
+    Found 15-bit adder for signal <dataAddr[14]_GND_5_o_add_15_OUT> created at line 78.
+    Found 15-bit adder for signal <instrAddr[14]_GND_5_o_add_17_OUT> created at line 97.
+    Summary:
+	inferred   4 Adder/Subtractor(s).
+	inferred  90 D-type flip-flop(s).
+	inferred   4 Multiplexer(s).
+	inferred   1 Finite State Machine(s).
+Unit <Core> synthesized.
+
+Synthesizing Unit <memController>.
+    Related source file is "\\chips.eng.utah.edu\home\aupayne\16-bit_computer\verilog\memController.v".
+        SIZE_TEXT = 14'b10000000000000
+        SIZE_GLYPH = 14'b00010000000000
+        SIZE_INSTR = 14'b10100000000000
+        ADDR_TEXT = 14'b00000000000000
+        ADDR_GLYPH = 14'b10000000000000
+WARNING:Xst:647 - Input <enable> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+WARNING:Xst:647 - Input <reset> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+    Summary:
+	no macro.
+Unit <memController> synthesized.
+
+Synthesizing Unit <vga_display>.
+    Related source file is "\\chips.eng.utah.edu\home\aupayne\16-bit_computer\verilog\vga_display.v".
+    Summary:
+	no macro.
+Unit <vga_display> synthesized.
+
+Synthesizing Unit <vga_counter>.
+    Related source file is "\\chips.eng.utah.edu\home\aupayne\16-bit_computer\verilog\vga_counter.v".
+        SUB_PIXEL_WIDTH = 2
+        PIXELS = 800
+        PIXEL_WIDTH = 10
+        LINES = 525
+        LINE_WIDTH = 9
+        PIXEL_COUNTER_START = 10'b0000000000
+        LINE_COUNTER_START = 9'b000000000
+    Found 10-bit register for signal <pixel_counter>.
+    Found 9-bit register for signal <line_counter>.
+    Found 2-bit register for signal <sub_pixel_counter>.
+    Found 2-bit adder for signal <sub_pixel_counter[1]_GND_9_o_add_1_OUT> created at line 51.
+    Found 9-bit adder for signal <line_counter[8]_GND_9_o_add_4_OUT> created at line 57.
+    Found 10-bit adder for signal <pixel_counter[9]_GND_9_o_add_5_OUT> created at line 60.
+    Summary:
+	inferred   3 Adder/Subtractor(s).
+	inferred  21 D-type flip-flop(s).
+	inferred   1 Multiplexer(s).
+Unit <vga_counter> synthesized.
+
+Synthesizing Unit <pixel_generator>.
+    Related source file is "\\chips.eng.utah.edu\home\aupayne\16-bit_computer\verilog\pixel_generator.v".
+        TEXT_FETCH = 0
+        GLYPH_FETCH = 1
+        SET_FOREGROUND = 2
+        DRAW = 3
+        SIZE_TEXT = 14'b10000000000000
+        SIZE_GLYPH = 14'b00010000000000
+        ADDR_TEXT = 14'b00000000000000
+        ADDR_GLYPH = 14'b10000000000000
+    Found 8-bit register for signal <color>.
+    Found 4-bit adder for signal <PWR_10_o_GND_10_o_add_3_OUT> created at line 55.
+    Found 11-bit adder for signal <n0044[10:0]> created at line 72.
+    Found 15-bit adder for signal <n0039> created at line 72.
+    Found 1-bit 16-to-1 multiplexer for signal <PWR_10_o_pg_data[15]_Mux_4_o> created at line 55.
+    Found 1-bit 8-to-1 multiplexer for signal <pixel_counter[2]_pg_data[7]_Mux_5_o> created at line 57.
+    Summary:
+	inferred   3 Adder/Subtractor(s).
+	inferred   8 D-type flip-flop(s).
+	inferred   3 Multiplexer(s).
+Unit <pixel_generator> synthesized.
+
+Synthesizing Unit <vga_output>.
+    Related source file is "\\chips.eng.utah.edu\home\aupayne\16-bit_computer\verilog\vga_output.v".
+        H_ACTIVE = 640
+        H_FRONT = 656
+        H_SYNC = 752
+        H_BACK = 800
+        V_ACTIVE = 480
+        V_FRONT = 490
+        V_SYNC = 492
+        V_BACK = 525
+    Found 10-bit comparator lessequal for signal <n0002> created at line 54
+    Found 10-bit comparator greater for signal <pixel_counter[9]_PWR_11_o_LessThan_2_o> created at line 54
+    Found 9-bit comparator lessequal for signal <n0007> created at line 59
+    Found 9-bit comparator greater for signal <line_counter[8]_PWR_11_o_LessThan_4_o> created at line 59
+    Found 10-bit comparator greater for signal <pixel_counter[9]_PWR_11_o_LessThan_5_o> created at line 65
+    Found 9-bit comparator greater for signal <line_counter[8]_PWR_11_o_LessThan_6_o> created at line 66
+    Summary:
+	inferred   6 Comparator(s).
+	inferred   4 Multiplexer(s).
+Unit <vga_output> synthesized.
+
+=========================================================================
+HDL Synthesis Report
+
+Macro Statistics
+# Adders/Subtractors                                   : 10
+ 10-bit adder                                          : 1
+ 11-bit adder                                          : 1
+ 15-bit adder                                          : 3
+ 16-bit adder                                          : 1
+ 2-bit adder                                           : 1
+ 26-bit adder                                          : 1
+ 4-bit adder                                           : 1
+ 9-bit adder                                           : 1
+# Registers                                            : 11
+ 1-bit register                                        : 2
+ 10-bit register                                       : 1
+ 15-bit register                                       : 2
+ 16-bit register                                       : 2
+ 2-bit register                                        : 1
+ 26-bit register                                       : 1
+ 8-bit register                                        : 1
+ 9-bit register                                        : 1
+# Comparators                                          : 6
+ 10-bit comparator greater                             : 2
+ 10-bit comparator lessequal                           : 1
+ 9-bit comparator greater                              : 2
+ 9-bit comparator lessequal                            : 1
+# Multiplexers                                         : 12
+ 1-bit 16-to-1 multiplexer                             : 1
+ 1-bit 2-to-1 multiplexer                              : 2
+ 1-bit 8-to-1 multiplexer                              : 1
+ 10-bit 2-to-1 multiplexer                             : 1
+ 15-bit 2-to-1 multiplexer                             : 3
+ 16-bit 2-to-1 multiplexer                             : 1
+ 8-bit 2-to-1 multiplexer                              : 3
+# FSMs                                                 : 1
+
+=========================================================================
+
+=========================================================================
+*                       Advanced HDL Synthesis                          *
+=========================================================================
+
+Reading core <RAMplz.ngc>.
+Loading core <RAMplz> for timing and area information for instance <_dataRAM>.
+
+Synthesizing (advanced) Unit <Core>.
+The following registers are absorbed into counter <currentData>: 1 register on signal <currentData>.
+The following registers are absorbed into counter <clockLimit>: 1 register on signal <clockLimit>.
+The following registers are absorbed into counter <dataAddr>: 1 register on signal <dataAddr>.
+Unit <Core> synthesized (advanced).
+
+Synthesizing (advanced) Unit <vga_counter>.
+The following registers are absorbed into counter <sub_pixel_counter>: 1 register on signal <sub_pixel_counter>.
+The following registers are absorbed into counter <line_counter>: 1 register on signal <line_counter>.
+The following registers are absorbed into counter <pixel_counter>: 1 register on signal <pixel_counter>.
+Unit <vga_counter> synthesized (advanced).
+
+=========================================================================
+Advanced HDL Synthesis Report
+
+Macro Statistics
+# Adders/Subtractors                                   : 4
+ 11-bit adder                                          : 1
+ 15-bit adder                                          : 2
+ 4-bit adder                                           : 1
+# Counters                                             : 6
+ 10-bit up counter                                     : 1
+ 15-bit up counter                                     : 1
+ 16-bit up counter                                     : 1
+ 2-bit up counter                                      : 1
+ 26-bit up counter                                     : 1
+ 9-bit up counter                                      : 1
+# Registers                                            : 41
+ Flip-Flops                                            : 41
+# Comparators                                          : 6
+ 10-bit comparator greater                             : 2
+ 10-bit comparator lessequal                           : 1
+ 9-bit comparator greater                              : 2
+ 9-bit comparator lessequal                            : 1
+# Multiplexers                                         : 24
+ 1-bit 16-to-1 multiplexer                             : 1
+ 1-bit 2-to-1 multiplexer                              : 17
+ 1-bit 8-to-1 multiplexer                              : 1
+ 15-bit 2-to-1 multiplexer                             : 2
+ 8-bit 2-to-1 multiplexer                              : 3
+# FSMs                                                 : 1
+
+=========================================================================
+
+=========================================================================
+*                         Low Level Synthesis                           *
+=========================================================================
+Analyzing FSM <MFsm> for best encoding.
+Optimizing FSM <cooCore/FSM_0> on signal <CI[1:3]> with user encoding.
+-------------------
+ State | Encoding
+-------------------
+ 000   | 000
+ 001   | 001
+ 010   | 010
+ 011   | 011
+ 100   | 100
+ 110   | 110
+ 101   | 101
+-------------------
+INFO:Xst:2261 - The FF/Latch <color_0> in Unit <pixel_generator> is equivalent to the following 7 FFs/Latches, which will be removed : <color_1> <color_2> <color_3> <color_4> <color_5> <color_6> <color_7> 
+
+Optimizing unit <computer> ...
+
+Optimizing unit <pixel_generator> ...
+
+Optimizing unit <vga_counter> ...
+
+Optimizing unit <Core> ...
+
+Mapping all equations...
+Building and optimizing final netlist ...
+Found area constraint ratio of 100 (+ 5) on block computer, actual ratio is 2.
+
+Final Macro Processing ...
+
+=========================================================================
+Final Register Report
+
+Macro Statistics
+# Registers                                            : 115
+ Flip-Flops                                            : 115
+
+=========================================================================
+
+=========================================================================
+*                           Partition Report                            *
+=========================================================================
+
+Partition Implementation Status
+-------------------------------
+
+  No Partitions were found in this design.
+
+-------------------------------
+
+=========================================================================
+*                            Design Summary                             *
+=========================================================================
+
+Top Level Output File Name         : computer.ngc
+
+Primitive and Black Box Usage:
+------------------------------
+# BELS                             : 462
+#      GND                         : 2
+#      INV                         : 8
+#      LUT1                        : 61
+#      LUT2                        : 7
+#      LUT3                        : 142
+#      LUT4                        : 14
+#      LUT5                        : 22
+#      LUT6                        : 26
+#      MUXCY                       : 85
+#      MUXF7                       : 2
+#      VCC                         : 2
+#      XORCY                       : 91
+# FlipFlops/Latches                : 117
+#      FD                          : 31
+#      FDE                         : 64
+#      FDR                         : 3
+#      FDRE                        : 19
+# RAMS                             : 32
+#      RAMB16BWER                  : 32
+# Clock Buffers                    : 1
+#      BUFG                        : 1
+# IO Buffers                       : 14
+#      IBUF                        : 2
+#      IBUFG                       : 1
+#      OBUF                        : 11
+
+Device utilization summary:
+---------------------------
+
+Selected Device : 6slx16csg324-3 
+
+
+Slice Logic Utilization: 
+ Number of Slice Registers:             117  out of  18224     0%  
+ Number of Slice LUTs:                  280  out of   9112     3%  
+    Number used as Logic:               280  out of   9112     3%  
+
+Slice Logic Distribution: 
+ Number of LUT Flip Flop pairs used:    282
+   Number with an unused Flip Flop:     165  out of    282    58%  
+   Number with an unused LUT:             2  out of    282     0%  
+   Number of fully used LUT-FF pairs:   115  out of    282    40%  
+   Number of unique control sets:         8
+
+IO Utilization: 
+ Number of IOs:                          14
+ Number of bonded IOBs:                  14  out of    232     6%  
+
+Specific Feature Utilization:
+ Number of Block RAM/FIFO:               32  out of     32   100%  
+    Number using Block RAM only:         32
+ Number of BUFG/BUFGCTRLs:                1  out of     16     6%  
+
+---------------------------
+Partition Resource Summary:
+---------------------------
+
+  No Partitions were found in this design.
+
+---------------------------
+
+
+=========================================================================
+Timing Report
+
+NOTE: THESE TIMING NUMBERS ARE ONLY A SYNTHESIS ESTIMATE.
+      FOR ACCURATE TIMING INFORMATION PLEASE REFER TO THE TRACE REPORT
+      GENERATED AFTER PLACE-and-ROUTE.
+
+Clock Information:
+------------------
+-----------------------------------+------------------------+-------+
+Clock Signal                       | Clock buffer(FF name)  | Load  |
+-----------------------------------+------------------------+-------+
+ext_clk                            | IBUFG+BUFG             | 149   |
+-----------------------------------+------------------------+-------+
+
+Asynchronous Control Signals Information:
+----------------------------------------
+No asynchronous control signals found in this design
+
+Timing Summary:
+---------------
+Speed Grade: -3
+
+   Minimum period: 5.200ns (Maximum Frequency: 192.297MHz)
+   Minimum input arrival time before clock: 3.807ns
+   Maximum output required time after clock: 6.584ns
+   Maximum combinational path delay: 6.305ns
+
+Timing Details:
+---------------
+All values displayed in nanoseconds (ns)
+
+=========================================================================
+Timing constraint: Default period analysis for Clock 'ext_clk'
+  Clock period: 5.200ns (frequency: 192.297MHz)
+  Total number of paths / destination ports: 8285 / 1285
+-------------------------------------------------------------------------
+Delay:               5.200ns (Levels of Logic = 3)
+  Source:            _memController/_dataRAM/U0/xst_blk_mem_generator/gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[14].ram.r/s6_init.ram/TRUE_DP.PRIM18.ram (RAM)
+  Destination:       _memController/_dataRAM/U0/xst_blk_mem_generator/gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[31].ram.r/s6_init.ram/TRUE_DP.PRIM18.ram (RAM)
+  Source Clock:      ext_clk rising
+  Destination Clock: ext_clk rising
+
+  Data Path: _memController/_dataRAM/U0/xst_blk_mem_generator/gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[14].ram.r/s6_init.ram/TRUE_DP.PRIM18.ram to _memController/_dataRAM/U0/xst_blk_mem_generator/gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[31].ram.r/s6_init.ram/TRUE_DP.PRIM18.ram
+                                Gate     Net
+    Cell:in->out      fanout   Delay   Delay  Logical Name (Net Name)
+    ----------------------------------------  ------------
+     RAMB16BWER:CLKB->DOB0    1   1.850   0.684  U0/xst_blk_mem_generator/gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[14].ram.r/s6_init.ram/TRUE_DP.PRIM18.ram (U0/xst_blk_mem_generator/gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[14].ram.ram_doutb)
+     LUT3:I1->O            2   0.203   0.617  U0/xst_blk_mem_generator/gnativebmg.native_blk_mem_gen/valid.cstr/has_mux_b.B/Mmux_dout_mux141 (doutb<7>)
+     end scope: '_memController/_dataRAM:doutb<7>'
+     LUT4:I3->O           32   0.205   1.291  _vga_display/_pixel_generator/pg_addr<6>1 (vga_addr<9>)
+     begin scope: '_memController/_dataRAM:addrb<9>'
+     RAMB16BWER:ADDRB9         0.350          U0/xst_blk_mem_generator/gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[1].ram.r/s6_init.ram/TRUE_DP.PRIM18.ram
+    ----------------------------------------
+    Total                      5.200ns (2.608ns logic, 2.592ns route)
+                                       (50.2% logic, 49.8% route)
+
+=========================================================================
+Timing constraint: Default OFFSET IN BEFORE for Clock 'ext_clk'
+  Total number of paths / destination ports: 44 / 22
+-------------------------------------------------------------------------
+Offset:              3.807ns (Levels of Logic = 2)
+  Source:            enable (PAD)
+  Destination:       _vga_display/_vga_counter/line_counter_8 (FF)
+  Destination Clock: ext_clk rising
+
+  Data Path: enable to _vga_display/_vga_counter/line_counter_8
+                                Gate     Net
+    Cell:in->out      fanout   Delay   Delay  Logical Name (Net Name)
+    ----------------------------------------  ------------
+     IBUF:I->O             5   1.222   0.819  enable_IBUF (on_OBUF)
+     LUT2:I0->O           22   0.203   1.133  _vga_display/_vga_output/reset_enable_OR_60_o1 (_vga_display/_vga_output/reset_enable_OR_60_o)
+     FDR:R                     0.430          _vga_display/_vga_counter/sub_pixel_counter_0
+    ----------------------------------------
+    Total                      3.807ns (1.855ns logic, 1.952ns route)
+                                       (48.7% logic, 51.3% route)
+
+=========================================================================
+Timing constraint: Default OFFSET OUT AFTER for Clock 'ext_clk'
+  Total number of paths / destination ports: 78 / 10
+-------------------------------------------------------------------------
+Offset:              6.584ns (Levels of Logic = 4)
+  Source:            _vga_display/_vga_counter/line_counter_7 (FF)
+  Destination:       color<7> (PAD)
+  Source Clock:      ext_clk rising
+
+  Data Path: _vga_display/_vga_counter/line_counter_7 to color<7>
+                                Gate     Net
+    Cell:in->out      fanout   Delay   Delay  Logical Name (Net Name)
+    ----------------------------------------  ------------
+     FDRE:C->Q             4   0.447   0.788  _vga_display/_vga_counter/line_counter_7 (_vga_display/_vga_counter/line_counter_7)
+     LUT2:I0->O            1   0.203   0.684  _vga_display/_vga_output/pixel_counter[9]_line_counter[8]_AND_11_o_SW0 (N6)
+     LUT6:I4->O            1   0.203   0.684  _vga_display/_vga_output/pixel_counter[9]_line_counter[8]_AND_11_o (_vga_display/_vga_output/pixel_counter[9]_line_counter[8]_AND_11_o)
+     LUT4:I2->O            8   0.203   0.802  _vga_display/_vga_output/Mmux_color11 (color_0_OBUF)
+     OBUF:I->O                 2.571          color_0_OBUF (color<0>)
+    ----------------------------------------
+    Total                      6.584ns (3.627ns logic, 2.957ns route)
+                                       (55.1% logic, 44.9% route)
+
+=========================================================================
+Timing constraint: Default path analysis
+  Total number of paths / destination ports: 21 / 11
+-------------------------------------------------------------------------
+Delay:               6.305ns (Levels of Logic = 4)
+  Source:            enable (PAD)
+  Destination:       VSync (PAD)
+
+  Data Path: enable to VSync
+                                Gate     Net
+    Cell:in->out      fanout   Delay   Delay  Logical Name (Net Name)
+    ----------------------------------------  ------------
+     IBUF:I->O             5   1.222   0.943  enable_IBUF (on_OBUF)
+     LUT5:I2->O            1   0.205   0.580  _vga_display/_vga_output/Mmux_VSync1_SW0 (N4)
+     LUT6:I5->O            1   0.205   0.579  _vga_display/_vga_output/Mmux_VSync1 (VSync_OBUF)
+     OBUF:I->O                 2.571          VSync_OBUF (VSync)
+    ----------------------------------------
+    Total                      6.305ns (4.203ns logic, 2.102ns route)
+                                       (66.7% logic, 33.3% route)
+
+=========================================================================
+
+Cross Clock Domains Report:
+--------------------------
+
+Clock to Setup on destination clock ext_clk
+---------------+---------+---------+---------+---------+
+               | Src:Rise| Src:Fall| Src:Rise| Src:Fall|
+Source Clock   |Dest:Rise|Dest:Rise|Dest:Fall|Dest:Fall|
+---------------+---------+---------+---------+---------+
+ext_clk        |    5.200|         |         |         |
+---------------+---------+---------+---------+---------+
+
+=========================================================================
+
+
+Total REAL time to Xst completion: 11.00 secs
+Total CPU time to Xst completion: 10.77 secs
+ 
+--> 
+
+Total memory usage is 299068 kilobytes
+
+Number of errors   :    0 (   0 filtered)
+Number of warnings :    3 (   0 filtered)
+Number of infos    :    1 (   0 filtered)
+
