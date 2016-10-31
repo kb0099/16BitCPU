@@ -7,11 +7,11 @@ public class ImmInstruction extends Instruction {
 
 	public ImmInstruction(Instr instruction, String destReg, String imm) {
 		super(instruction);
-		this.imm = Short.parseShort(imm);
+		this.imm = ParseImmediate(imm);
 		this.destReg = destReg;
 	}
 
-	public Short getImm() {
+	public short getImm() {
 		return imm;
 	}
 
@@ -22,11 +22,12 @@ public class ImmInstruction extends Instruction {
 	public String toString() {
 		String opCode = "01";
 		String instruction = DecodeInstruction(this.getInstruction());
-		String destReg = DecodeRegister(this.destReg);
-		String imm = String.format("%7s", Integer.toBinaryString(this.imm)).replace(' ', '0');
+		String destReg = ConvertRegToBinary(DecodeRegister(this.destReg));
+		String imm = ConvertImmToBinary(this.imm, 7);
 
-		return opCode + instruction + imm + destReg;
+		return opCode + instruction + destReg + imm;
 		
 		//return String.format("%02x%03x%07x%04x", opCode, instruction, imm, destReg);
 	}
+	
 }

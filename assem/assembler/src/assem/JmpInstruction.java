@@ -6,17 +6,17 @@ public class JmpInstruction extends Instruction {
 
 	public JmpInstruction(Instr instruction, String address) {
 		super(instruction);
-		this.address = Short.parseShort(address);
+		this.address = ParseImmediate(address);
 	}
 
-	public short address() {
+	public short getAddress() {
 		return address;
 	}
 
 	public String toString() {
 		String opCode = "11";
 		String instruction = DecodeInstruction(this.getInstruction());
-		String address = String.format("%11s", Integer.toBinaryString(this.address)).replace(' ', '0');
+		String address = ConvertImmToBinary(this.address, 11);
 
 		return opCode + instruction + address;
 		

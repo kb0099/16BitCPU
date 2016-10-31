@@ -22,8 +22,8 @@ public class RegInstruction extends Instruction {
 	public String toString() {
 		String opCode = "00";
 		String instruction = DecodeInstruction(this.getInstruction());
-		String srcReg = DecodeRegister(this.srcReg);
-		String destReg = DecodeRegister(this.destReg);
+		String srcReg = ConvertRegToBinary(DecodeRegister(this.srcReg));
+		String destReg = ConvertRegToBinary(DecodeRegister(this.destReg));
 
 		return opCode + instruction + srcReg + destReg;
 		
