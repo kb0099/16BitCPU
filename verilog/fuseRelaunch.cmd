@@ -1,0 +1,1 @@
+-intstyle "ise" -incremental -lib "unisims_ver" -lib "unimacro_ver" -lib "xilinxcorelib_ver" -lib "secureip" -o "X:/16-bit_computer/verilog/test_memController_isim_beh.exe" -prj "X:/16-bit_computer/verilog/test_memController_beh.prj" "work.test_memController" "work.glbl" 

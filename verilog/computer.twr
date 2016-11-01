@@ -1,0 +1,107 @@
+--------------------------------------------------------------------------------
+Release 14.7 Trace  (nt64)
+Copyright (c) 1995-2013 Xilinx, Inc.  All rights reserved.
+
+C:\Xilinx\14.7\ISE_DS\ISE\bin\nt64\unwrapped\trce.exe -intstyle ise -v 3 -s 3
+-n 3 -fastpaths -xml computer.twx computer.ncd -o computer.twr computer.pcf
+-ucf computer.ucf
+
+Design file:              computer.ncd
+Physical constraint file: computer.pcf
+Device,package,speed:     xc6slx16,csg324,C,-3 (PRODUCTION 1.23 2013-10-13)
+Report level:             verbose report
+
+Environment Variable      Effect 
+--------------------      ------ 
+NONE                      No environment variables were set
+--------------------------------------------------------------------------------
+
+INFO:Timing:2698 - No timing constraints found, doing default enumeration.
+INFO:Timing:3412 - To improve timing, see the Timing Closure User Guide (UG612).
+INFO:Timing:2752 - To get complete path coverage, use the unconstrained paths 
+   option. All paths that are not constrained will be reported in the 
+   unconstrained paths section(s) of the report.
+INFO:Timing:3339 - The clock-to-out numbers in this timing report are based on 
+   a 50 Ohm transmission line loading model.  For the details of this model, 
+   and for more information on accounting for different loading conditions, 
+   please see the device datasheet.
+
+
+
+Data Sheet report:
+-----------------
+All values displayed in nanoseconds (ns)
+
+Setup/Hold to clock ext_clk
+------------+------------+------------+------------+------------+------------------+--------+
+            |Max Setup to|  Process   |Max Hold to |  Process   |                  | Clock  |
+Source      | clk (edge) |   Corner   | clk (edge) |   Corner   |Internal Clock(s) | Phase  |
+------------+------------+------------+------------+------------+------------------+--------+
+enable      |    5.159(R)|      SLOW  |   -2.196(R)|      FAST  |clk               |   0.000|
+reset       |    4.359(R)|      SLOW  |   -1.581(R)|      FAST  |clk               |   0.000|
+------------+------------+------------+------------+------------+------------------+--------+
+
+Clock ext_clk to Pad
+------------+-----------------+------------+-----------------+------------+------------------+--------+
+            |Max (slowest) clk|  Process   |Min (fastest) clk|  Process   |                  | Clock  |
+Destination |  (edge) to PAD  |   Corner   |  (edge) to PAD  |   Corner   |Internal Clock(s) | Phase  |
+------------+-----------------+------------+-----------------+------------+------------------+--------+
+HSync       |        11.286(R)|      SLOW  |         5.810(R)|      FAST  |clk               |   0.000|
+VSync       |        11.110(R)|      SLOW  |         5.765(R)|      FAST  |clk               |   0.000|
+color<0>    |        12.732(R)|      SLOW  |         6.117(R)|      FAST  |clk               |   0.000|
+color<1>    |        12.937(R)|      SLOW  |         6.225(R)|      FAST  |clk               |   0.000|
+color<2>    |        12.675(R)|      SLOW  |         6.104(R)|      FAST  |clk               |   0.000|
+color<3>    |        12.508(R)|      SLOW  |         5.975(R)|      FAST  |clk               |   0.000|
+color<4>    |        12.483(R)|      SLOW  |         5.953(R)|      FAST  |clk               |   0.000|
+color<5>    |        12.479(R)|      SLOW  |         5.949(R)|      FAST  |clk               |   0.000|
+color<6>    |        12.322(R)|      SLOW  |         5.868(R)|      FAST  |clk               |   0.000|
+color<7>    |        12.322(R)|      SLOW  |         5.868(R)|      FAST  |clk               |   0.000|
+------------+-----------------+------------+-----------------+------------+------------------+--------+
+
+Clock to Setup on destination clock ext_clk
+---------------+---------+---------+---------+---------+
+               | Src:Rise| Src:Fall| Src:Rise| Src:Fall|
+Source Clock   |Dest:Rise|Dest:Rise|Dest:Fall|Dest:Fall|
+---------------+---------+---------+---------+---------+
+ext_clk        |    7.685|         |         |         |
+---------------+---------+---------+---------+---------+
+
+Pad to Pad
+---------------+---------------+---------+
+Source Pad     |Destination Pad|  Delay  |
+---------------+---------------+---------+
+enable         |HSync          |   12.284|
+enable         |VSync          |   12.652|
+enable         |color<0>       |   11.404|
+enable         |color<1>       |   11.609|
+enable         |color<2>       |   11.347|
+enable         |color<3>       |   11.180|
+enable         |color<4>       |   11.155|
+enable         |color<5>       |   11.151|
+enable         |color<6>       |   10.994|
+enable         |color<7>       |   10.994|
+enable         |on             |    7.506|
+reset          |HSync          |   11.720|
+reset          |VSync          |   11.852|
+reset          |color<0>       |   10.840|
+reset          |color<1>       |   11.045|
+reset          |color<2>       |   10.783|
+reset          |color<3>       |   10.616|
+reset          |color<4>       |   10.591|
+reset          |color<5>       |   10.587|
+reset          |color<6>       |   10.430|
+reset          |color<7>       |   10.430|
+---------------+---------------+---------+
+
+
+Analysis completed Wed Oct 26 23:45:04 2016 
+--------------------------------------------------------------------------------
+
+Trace Settings:
+-------------------------
+Trace Settings 
+
+Peak Memory Usage: 248 MB
+
+
+

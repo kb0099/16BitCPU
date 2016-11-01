@@ -121,7 +121,7 @@ public class Instruction {
 	 * @param imm String in hex or decimal
 	 * @return short immediate value
 	 */
-	public static short ParseImmediate(String imm) {
+	/*public static short ParseImmediate(String imm) {
 		if (imm.startsWith("0x")) { // match hex format
 			imm = imm.replace("0x", ""); // remove hex identifier
 			System.out.println(imm + ": " + Short.parseShort(imm, 16));
@@ -131,5 +131,5 @@ public class Instruction {
 			Short.parseShort(imm, 10); // else match decimal
 		}
 		return 0;
-	}
+	}*/
 }

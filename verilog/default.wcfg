@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wave_config>
+   <wave_state>
+   </wave_state>
+   <db_ref_list>
+      <db_ref path="X:/16-bit_computer/verilog/test_memController_isim_beh.wdb" id="1" type="auto">
+         <top_modules>
+            <top_module name="glbl" />
+            <top_module name="test_memController" />
+         </top_modules>
+      </db_ref>
+   </db_ref_list>
+   <WVObjectSize size="10" />
+   <wvobject fp_name="/test_memController/color" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">color[7:0]</obj_property>
+      <obj_property name="ObjectShortName">color[7:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/test_memController/HSync" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">HSync</obj_property>
+      <obj_property name="ObjectShortName">HSync</obj_property>
+   </wvobject>
+   <wvobject fp_name="/test_memController/VSync" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">VSync</obj_property>
+      <obj_property name="ObjectShortName">VSync</obj_property>
+   </wvobject>
+   <wvobject fp_name="/test_memController/on" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">on</obj_property>
+      <obj_property name="ObjectShortName">on</obj_property>
+   </wvobject>
+   <wvobject fp_name="/test_memController/enable" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">enable</obj_property>
+      <obj_property name="ObjectShortName">enable</obj_property>
+   </wvobject>
+   <wvobject fp_name="/test_memController/reset" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">reset</obj_property>
+      <obj_property name="ObjectShortName">reset</obj_property>
+   </wvobject>
+   <wvobject fp_name="/test_memController/ext_clk" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">ext_clk</obj_property>
+      <obj_property name="ObjectShortName">ext_clk</obj_property>
+   </wvobject>
+   <wvobject fp_name="/test_memController/uut/_vga_display/_pixel_generator/pg_addr" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">pg_addr[14:0]</obj_property>
+      <obj_property name="ObjectShortName">pg_addr[14:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/test_memController/uut/_vga_display/_pixel_generator/pg_data" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">pg_data[15:0]</obj_property>
+      <obj_property name="ObjectShortName">pg_data[15:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/test_memController/uut/_vga_display/_pixel_generator/foreground" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">foreground</obj_property>
+      <obj_property name="ObjectShortName">foreground</obj_property>
+   </wvobject>
+</wave_config>

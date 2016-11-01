@@ -1,0 +1,8 @@
+INTSTYLE=ise
+INFILE=X:\16-bit_computer\verilog\computer.ncd
+OUTFILE=X:\16-bit_computer\verilog\computer.bit
+FAMILY=Spartan6
+PART=xc6slx16-3csg324
+WORKINGDIR=X:\16-bit_computer\verilog
+LICENSE=WebPack
+USER_INFO=210784831_0_0_637
