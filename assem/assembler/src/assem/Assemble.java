@@ -22,6 +22,18 @@ public class Assemble {
 	private static final int LABEL_POSITION 	  	= 1; // position in lines list
 	private static final int FUNCTION_POSITION 	  	= 2; // position in lines list
 	
+	private static final int RTYPE_DST_REG_POSITION = 3;
+	private static final int RTYPE_SRC_REG_POSITION = 4;
+	
+	private static final int ITYPE_DST_REG_POSITION = RTYPE_DST_REG_POSITION;
+	private static final int ITYPE_IMM_POSITION		= RTYPE_SRC_REG_POSITION;
+	
+	private static final int MTYPE_DST_REG_POSITION = RTYPE_DST_REG_POSITION;
+	private static final int MTYPE_MEM_REG_POSITION = RTYPE_SRC_REG_POSITION;
+	private static final int MTYPE_BANK_POSITION 	= 5;
+	
+	private static final int JTYPE_ADDR_POSITION 	= RTYPE_DST_REG_POSITION;
+	
 	// regex patterns
 	private static final String LABEL_FORMAT 		= "^\\D.*"; // labels cannot start with a digit
 	private static final String WHITE_SPACE_PATTERN = "[ \t]"; // spaces and tabs
@@ -30,36 +42,55 @@ public class Assemble {
 	private static final String SPECIAL_FUNC_PREFIX = "."; // period
 	private static final String COMMENT 			= "//"; // slash slash
 	private static final String HEX_PREFIX 			= "0x";
+	private static final String REG_PREFIX	    	= "$";
+	private static final String REG_PREFIX_CHAR 	= "r";
+	private static final String REG_PATTERN    		= REG_PREFIX_CHAR + "[0-9]+";
+	private static final String ZERO_REG			= "zero";
+	private static final String SP_REG				= "sp";
+	private static final String RET_REG				= "ret";
+	private static final String RA_REG				= "ra";
+	
+	// encoding bit widths
+	private static final int OPCODE_BIT_WIDTH		= 2;
+	private static final int REG_BIT_WIDTH			= 4;
 	
 	// bit widths (use for max value error checking)
 	private static final int JUMP_ADDRESS_BIT_WIDTH = 11; // max jump address = 2^11
 	private static final int IMMEDIATE_BIT_WIDTH    =  7; // max immediate value = 2^7
 	private static final int BANK_BIT_WIDTH 		=  5; // max bank size = 2^5
-	private static final int REGISTER_BIT_WIDTH 	= 16; // max register size = 2^16
+	private static final int REG_CONTENTS_BIT_WIDTH = 16; // max register size = 2^16
 	
-	// instruction mappings
-	private static final Map<String, String> functions = new HashMap<>();
-	static {
-		String rType = convertImmToBinary(0, 2);
-		String iType = convertImmToBinary(1, 2);
-		String mType = convertImmToBinary(2, 2);
-		String jType = convertImmToBinary(3, 2);
+	
+	// instruction mappings include opcode and instruction code
+	private static final int RTYPE_OPCODE 			= 0;
+	private static final int ITYPE_OPCODE 			= 1;
+	private static final int MTYPE_OPCODE 			= 2;
+	private static final int JTYPE_OPCODE 			= 3;
+	
+	private static final int OP_CODE_POSITION 		= 0;
+	private static final int INSTR_CODE_POSITION 	= 1;
+	private static final Map<String, Integer[]> InstructionOpCodes = new HashMap<>();
+	
+	static {		
+		// rType instructions
+		InstructionOpCodes.put("add",   new Integer[] {RTYPE_OPCODE, 0});
+		InstructionOpCodes.put("sub",   new Integer[] {RTYPE_OPCODE, 1});
 		
-		// register type instructions
-		functions.put("add", rType + "000");
-		functions.put("sub", rType + "001");
-		// immediate type instructions
-		functions.put("addi", iType + "000");
-		functions.put("li", iType + "111");
-		// memory type instructions
-		functions.put("read", mType + "0");
-		functions.put("write", mType + "1");
-		// jump type instructions
-		functions.put("jl", jType + "000");
+		// iType instructions
+		InstructionOpCodes.put("addi",  new Integer[] {ITYPE_OPCODE, 0});
+		InstructionOpCodes.put("li",    new Integer[] {ITYPE_OPCODE, 7});
+		
+		// mType instructions
+		InstructionOpCodes.put("read",  new Integer[] {MTYPE_OPCODE, 0});
+		InstructionOpCodes.put("write", new Integer[] {MTYPE_OPCODE, 1});
+		
+		// jType instructions
+		InstructionOpCodes.put("jl",    new Integer[] {JTYPE_OPCODE, 0});
 	}
 	
 	// assembler variables
-	private static List<List<String>> lines = new ArrayList<>(); // list of lines
+	// list of lines stored in this format: <line#>, <label>?, <instruction>, <arguments>
+	private static List<List<String>> lines = new ArrayList<>(); 
 	private static List<String> output = new ArrayList<>(); // list of final bits to output
 	private static Map<String, Integer> labels = new HashMap<>(); // labels mapped to line address
 	
@@ -111,12 +142,15 @@ public class Assemble {
 		tokenize(assemblyFile); // split each line into tokens (labels, functions, registers, etc.)
 		initialize(); // run any special .initializers before anything else
 		map(); // map labels to a corresponding label address
-		encodeSimple(); // encode instructions and operators into machine code (bits)
+		encode(); // encode instructions and operators into machine code (bits)
 		generateMemory(outputFile, outputRadix); // write resulting machine code to .coe file
 		
 		long end = System.currentTimeMillis();
 		double time = (end-start)/1000d; // display execution time in seconds
 		System.out.format("Done. \nWrote %d words to '%s' in %.3fs \n", output.size(), outputFile, time);
+		
+		
+		
 		
 //		for (List<String> l : lines) {
 //			System.out.println(l);
@@ -124,8 +158,6 @@ public class Assemble {
 //		
 //
 //		labels.forEach((k,v)->System.out.println(k + ": " + v));
-//		
-//		System.out.format("%s\n", convertImmToBinary(7, 11));
 //		
 //		int i = 0;
 //		for (String o : output)
@@ -179,27 +211,100 @@ public class Assemble {
 	 */
 	private static void encode() {
 		for (List<String> l : lines) {
-			if (l.size() > 2) {
+			if (l.size() > 2) { // line must have more than a line number and label
 				String function = l.get(FUNCTION_POSITION);
+				Integer opCode = null;
 				
-				switch(function) {
-					case "add":
+				try {
+					opCode = InstructionOpCodes.get(function)[OP_CODE_POSITION];
+				} catch (NullPointerException npe) {
+					System.err.println(errorMsg(l.get(LINE_NUMBER_POSITION), function + " instruction is not supported"));
+					npe.printStackTrace();
+				}
+				
+				String encoding = null;
+				
+				switch(opCode) {
+					case RTYPE_OPCODE: 
+						encoding = encodeRType(opCode, function, l.get(RTYPE_SRC_REG_POSITION), l.get(RTYPE_DST_REG_POSITION));
 						break;
-					case "sub":
+					case ITYPE_OPCODE:
+						encoding = encodeIType(opCode, function, l.get(ITYPE_IMM_POSITION), l.get(ITYPE_DST_REG_POSITION));
 						break;
-					case "addi":
+					case MTYPE_OPCODE:
+						encoding = encodeMType(opCode, function, l.get(MTYPE_BANK_POSITION), l.get(MTYPE_MEM_REG_POSITION), l.get(MTYPE_DST_REG_POSITION));
 						break;
-					case "li":
-						break;
-					case "lw":
-						break;
-					case "sw":
-						break;
-					case "jl":
+					case JTYPE_OPCODE:
+						encoding = encodeJType(opCode, function, l.get(JTYPE_ADDR_POSITION));
 						break;
 				}
+				
+				output.add(encoding);
+				
 			}
 		}
+	}
+	
+	public static String encodeRType(Integer opCode, String instruction, String srcReg, String destReg) {
+		
+		String opCodeBits = convertImmToBinary(opCode, 2);
+		String instrCodeBits = convertImmToBinary(InstructionOpCodes.get(instruction)[INSTR_CODE_POSITION], 3);
+		String destRegBits = convertImmToBinary(encodeRegister(destReg), 4);
+		String srcRegBits = convertImmToBinary(encodeRegister(srcReg), 4);
+		
+		return opCodeBits + instrCodeBits + "000" + srcRegBits + destRegBits;
+	}
+	
+	public static String encodeIType(Integer opCode, String instruction, String imm, String destReg) {
+		
+		String opCodeBits = convertImmToBinary(opCode, OPCODE_BIT_WIDTH);
+		String instrCodeBits = convertImmToBinary(InstructionOpCodes.get(instruction)[INSTR_CODE_POSITION], 3);
+		String immBits = null;
+		String destRegBits = convertImmToBinary(encodeRegister(destReg), REG_BIT_WIDTH);
+		
+		int immValue = parseImmediate(imm);
+		
+		if (valueOutOfBounds(immValue, IMMEDIATE_BIT_WIDTH))
+			throw new NumberFormatException();
+		else 
+			immBits = Assemble.convertImmToBinary(immValue, IMMEDIATE_BIT_WIDTH);
+		
+		return opCodeBits + instrCodeBits + immBits + destRegBits;
+		
+	}
+	
+	public static String encodeMType(Integer opCode, String instruction, String bank, String memAddress, String destReg) {
+		
+		String opCodeBits = Assemble.convertImmToBinary(opCode, OPCODE_BIT_WIDTH);
+		String instrCodeBits = Assemble.convertImmToBinary(InstructionOpCodes.get(instruction)[INSTR_CODE_POSITION], 1);
+		String bankBits = null;
+		String memAddrBits = Assemble.convertImmToBinary(Assemble.encodeRegister(memAddress), REG_BIT_WIDTH);
+		String destRegBits = Assemble.convertImmToBinary(Assemble.encodeRegister(destReg), REG_BIT_WIDTH);
+		
+		int bankValue = parseImmediate(bank);
+		
+		if (valueOutOfBounds(bankValue, BANK_BIT_WIDTH))
+			throw new NumberFormatException();
+		else 
+			bankBits = Assemble.convertImmToBinary(bankValue, BANK_BIT_WIDTH);
+		
+		return opCodeBits + instrCodeBits + bankBits +memAddrBits + destRegBits;
+	}
+	
+	public static String encodeJType(Integer opCode, String instruction, String address) {
+		
+		String opCodeBits = Assemble.convertImmToBinary(opCode, OPCODE_BIT_WIDTH);
+		String instrCodeBits = Assemble.convertImmToBinary(InstructionOpCodes.get(instruction)[INSTR_CODE_POSITION], 3);
+		String addrBits = null;
+		
+		int addrValue = labels.get(address);
+		
+		if (valueOutOfBounds(addrValue, JUMP_ADDRESS_BIT_WIDTH))
+			throw new NumberFormatException();
+		else 
+			addrBits = Assemble.convertImmToBinary(addrValue, JUMP_ADDRESS_BIT_WIDTH);
+		
+		return opCodeBits + instrCodeBits + addrBits;
 	}
 
 	/**
@@ -290,9 +395,9 @@ public class Assemble {
 				String label = (String) l.get(LABEL_POSITION);
 				if (!(label).isEmpty()) {
 					if (!label.matches(LABEL_FORMAT)) //
-						error(l.get(LINE_NUMBER_POSITION), "Label '" + label + "' cannot start with a digit.");
+						throw new AssemblerFormatException(errorMsg(l.get(LINE_NUMBER_POSITION), "Label '" + label + "' cannot start with a digit."));
 					if (labels.containsKey(label)) 
-						error(l.get(LINE_NUMBER_POSITION), "Label '" + label + "' must be unique.");
+						throw new AssemblerFormatException(errorMsg(l.get(LINE_NUMBER_POSITION), "Label '" + label + "' must be unique."));
 					else 
 						labels.put(label, lines.indexOf(l));
 				}
@@ -302,8 +407,14 @@ public class Assemble {
 		}
 	}
 	
-	private static void error(String lineNumber, String errorString) throws Exception {
-		throw new Exception("Error on line " + lineNumber + ": " + errorString);
+	/**
+	 * 
+	 * @param lineNumber
+	 * @param errorString
+	 * @throws Exception
+	 */
+	public static String errorMsg(String lineNumber, String errorString) {
+		return "Error on line " + lineNumber + ": " + errorString;
 	}
 	
 	/**
@@ -525,6 +636,47 @@ public class Assemble {
 	}
 	
 	/**
+	 * Takes a register string (ex. $r1, $zero, etc.) and returns the 
+	 * associated register number
+	 * @param register to decode
+	 * @return byte the decoded register number
+	 */
+	public static byte encodeRegister(String register) {
+			
+		if (!register.startsWith(REG_PREFIX)) {
+			throw new IllegalArgumentException("Registers must begin with a " + REG_PREFIX);
+		}
+		else {
+			register = register.replace(REG_PREFIX, ""); // remove $
+		}
+		
+		
+		switch (register) {
+			case "0":
+			case ZERO_REG:	return 0;
+			case RET_REG:	return 12;
+			case SP_REG:	return 13;
+			case RA_REG:	return 14;		
+		}
+		
+		if (!register.matches(REG_PATTERN)) {
+			throw new IllegalArgumentException("Register names must be either a "
+					+ "special register name: zero, ret, sp, ra or of the form " + REG_PATTERN);
+		}
+		else {
+			register = register.replace(REG_PREFIX_CHAR, ""); // remove r
+			byte number = Byte.parseByte(register); // all that's left is the number
+			if (number > 11) {
+				throw new IllegalArgumentException("There are only 16 registers including: zero, "
+						+ "ret, sp, ra and registers 1-11");
+			}
+			else {
+				return number;
+			}
+		}
+	}
+	
+	/**
 	 * Parses a given immediate string into a value. Immediate
 	 * strings can be in either hexadecimal (of the form 0x[HEX])
 	 * or decimal notation. Cannot parse negative hex values
@@ -574,6 +726,14 @@ public class Assemble {
 	public static String binaryToHex(String binary) {
 		int decimal = Integer.parseInt(binary, 2);
 		return String.format("%4s", Integer.toString(decimal, 16)).replace(' ', '0');
+	}
+	
+	public static boolean valueOutOfBounds(int value, int width) {
+		
+		if (value >= Math.pow(2, width))
+			return true;
+		else
+			return false;
 	}
 
 }
