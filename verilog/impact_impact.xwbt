@@ -1,0 +1,8 @@
+INTSTYLE=impact
+INFILE=X:\16-bit_computer\verilog\impact.xsl
+OUTFILE=X:\16-bit_computer\verilog\impact.xsl
+FAMILY=Single
+PART=Single
+WORKINGDIR=X:\16-bit_computer\verilog
+LICENSE=iMPACT
+USER_INFO=iMPACT

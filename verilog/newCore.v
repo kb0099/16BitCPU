@@ -32,12 +32,16 @@ module newCore(
     reg [15:0] currentData = 16'd0;
     reg [14:0] dataAddr = 15'd0;
     reg [14:0] instrAddr = startAddr;
-    reg [19:0] clockLimit = 26'd0;
+    reg [10:0] clockLimit = 26'd0;
     reg [15:0] currentInstruction;
     initial we = 1'b0;
     // State reg
     reg [1:0] state = 2'b00;
     reg [14:0] addrOut;
+    parameter READ = 2'b00;
+    parameter WRITE = 2'b01;
+    parameter ADD = 2'b10;
+    parameter JUMP = 2'b11;
     
     //assign addrout = addrOut;
     assign dataout = currentData;
@@ -58,17 +62,12 @@ module newCore(
     // Set instruction address
     if (state == 2'b00)
       begin
-      //addrOut = instrAddr;
-      end
-    // Read instruction
-    else if (state == 2'b01)
-      begin
       currentInstruction <= datain;
       if (datain == 16'd0 || datain == 16'd1)
          readwrite <= 1'b1;
       end
-    // Execute instruction
-    else if (state == 2'b10)
+    // Read instruction
+    else if (state == 2'b01)
       begin
       case(currentInstruction)
          0: begin // READ
@@ -93,8 +92,8 @@ module newCore(
             end
       endcase
       end
-    // 2nd instr cycle/reset
-    else if (state == 2'b11)
+    // Execute instruction
+    else if (state == 2'b10)
       begin
       case(currentInstruction)
          0: begin // READ
@@ -113,7 +112,11 @@ module newCore(
             instrAddr <= startAddr;
             $display("JUMP");
             end
-      endcase      
+      endcase   
+      end
+    // 2nd instr cycle/reset
+    else if (state == 2'b11)
+      begin    
       if (dataAddr > 8000)
          dataAddr <= 15'd0;
       readwrite <= 1'b0;
