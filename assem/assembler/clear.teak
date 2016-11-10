@@ -1,0 +1,7 @@
+
+.teak // beginning of assembly code
+
+	li $r2, 0x0 // start at the beginning of text memory
+clear:	write $zero, $r2, 0 // clear character
+	addi $r2, 1 // increment to the next memory address
+	jl clear // repeat

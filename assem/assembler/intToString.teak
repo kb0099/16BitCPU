@@ -1,0 +1,22 @@
+
+// converts a integer into a string.
+// Returns a pointer to memory that is the start of the string
+// Strings are null terminated
+// ** need to define argument registers
+// max integer value: (2^16)-1 = 65535
+
+.teak // beginning of assembly code
+
+// if (integer > 65535) “error”
+
+// while (integer > 10000)
+//	integer = integer - 10000;
+//	ten_thousands++;
+// don’t store leading zero’s
+// … etc for other decimal places
+
+// charToStore = value + 48 // offset into decimal chars
+// store into memory
+// … do for each decimal place (don’t store leading zeros)
+// store null terminator at the end
+
