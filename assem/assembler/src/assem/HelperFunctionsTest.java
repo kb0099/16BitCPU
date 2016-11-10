@@ -85,5 +85,10 @@ public class HelperFunctionsTest {
 		assertTrue(Assemble.valueOutOfBounds(256, 8));
 		assertTrue(Assemble.valueOutOfBounds(4096, 12));
 	}
+	
+	@Test
+	public void jEncodingTest() {
+		
+	}
 
 }

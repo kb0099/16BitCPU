@@ -8,7 +8,7 @@
 start:	read  $r1, $r2, 0
 	andi  $r1, 127 // zero out top 8 bits (color bits)
 	compi $r1, 116
-	bne   skip // if $r1 != ’t’ skip increment
+	beq   skip // if $r1 != ’t’ skip increment
 	addi  $r1, 117 // restore $r1 value + 1
 	write $r1, $r2, 0
 skip:	addi  $r2, 1

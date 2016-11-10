@@ -132,7 +132,7 @@ public class Assemble {
 	public static void main(String[] args) {
 		
 		String assemblyFile = null;
-		String outputFile = "mem.coe"; // default
+		String outputFile = "branch-beq.coe"; // default
 		int outputRadix = 16; // default
 		
 		// set parameters based on input arguments
@@ -149,7 +149,7 @@ public class Assemble {
 				break;
 		}
 		
-		assemblyFile = "branch.teak";
+		assemblyFile = "branch-beq.teak";
 		
 		System.out.format("Assembling '%s' into '%s' (using radix %d) \n", assemblyFile, outputFile, outputRadix);
 		long start = System.currentTimeMillis(); // time execution time and report
@@ -168,12 +168,12 @@ public class Assemble {
 		
 		
 		
-		for (List<String> l : lines) {
-			System.out.println(l);
-		}
+//		for (List<String> l : lines) {
+//			System.out.println(l);
+//		}
 		
 
-		labels.forEach((k,v)->System.out.println(k + ": " + v));
+//		labels.forEach((k,v)->System.out.println(k + ": " + v));
 		
 //		int i = 0;
 //		for (String o : output)
@@ -320,7 +320,6 @@ public class Assemble {
 		else {
 			addrValue = addrValue - (currentLine + 1);
 			addrBits = Assemble.convertImmToBinary(addrValue, JUMP_ADDRESS_BIT_WIDTH);
-			//System.out.println(addrValue + ": ");
 		}
 		
 		return opCodeBits + instrCodeBits + addrBits;
