@@ -1,0 +1,188 @@
+diff --git a/assem/assembler/src/assem/Assemble.java b/assem/assembler/src/assem/Assemble.java
+index b0369a4..9cf7022 100644
+--- a/assem/assembler/src/assem/Assemble.java
++++ b/assem/assembler/src/assem/Assemble.java
+@@ -20,6 +20,7 @@ public class Assemble {
+ 	// lines list position constants
+ 	private static final int LINE_NUMBER_POSITION 	= 0; // position in lines list (source line number)
+ 	private static final int LABEL_POSITION 	  	= 1; // position in lines list
++	private static final int GLOBAL_ASSIGN_POSITION = 2;
+ 	private static final int FUNCTION_POSITION 	  	= 2; // position in lines list
+ 	
+ 	private static final int RTYPE_DST_REG_POSITION = 3;
+@@ -49,6 +50,7 @@ public class Assemble {
+ 	private static final String SP_REG				= "sp";
+ 	private static final String RET_REG				= "ret";
+ 	private static final String RA_REG				= "ra";
++	private static final String GLOBAL_PREFIX		= "@"; // global vars must start with @
+ 	
+ 	// encoding bit widths
+ 	private static final int OPCODE_BIT_WIDTH		= 2;
+@@ -132,7 +134,7 @@ public class Assemble {
+ 	public static void main(String[] args) {
+ 		
+ 		String assemblyFile = null;
+-		String outputFile = "branch-beq.coe"; // default
++		String outputFile = "print.coe"; // default
+ 		int outputRadix = 16; // default
+ 		
+ 		// set parameters based on input arguments
+@@ -149,13 +151,18 @@ public class Assemble {
+ 				break;
+ 		}
+ 		
+-		assemblyFile = "branch-beq.teak";
++		assemblyFile = "print.teak";
+ 		
+ 		System.out.format("Assembling '%s' into '%s' (using radix %d) \n", assemblyFile, outputFile, outputRadix);
+ 		long start = System.currentTimeMillis(); // time execution time and report
+ 		
+ 		// work
+ 		tokenize(assemblyFile); // split each line into tokens (labels, functions, registers, etc.)
++		
++		for (List<String> l : lines) {
++			System.out.println(l);
++		}
++		
+ 		initialize(); // run any special .initializers before anything else
+ 		map(); // map labels to a corresponding label address
+ 		encode(); // encode instructions and operators into machine code (bits)
+@@ -343,8 +350,9 @@ public class Assemble {
+ 			int lineNumber = 0; // keep track of lines for debugging
+ 			while( (line = reader.readLine()) != null) {
+ 				if (!line.isEmpty()) { // only operate on lines with text
+-					line = format(line); // cleans line of whitespace and comments
+-					parseLine(line, lineNumber++);
++					line = format(line); // cleans line comments
++					if (!line.isEmpty()) // if line is empty after cleaning, removing (i.e. line only has comments)
++						parseLine(line.trim(), lineNumber++);
+ 				}
+ 				else
+ 					lineNumber++;
+@@ -379,7 +387,15 @@ public class Assemble {
+ 		// if no label exist, a blank string is stored in the first element
+ 		if (tokens.get(0).endsWith(LABEL_DELIMITER) || tokens.get(0).startsWith(SPECIAL_FUNC_PREFIX)) {
+ 			
+-			lineList.add(clean(tokens.get(0).replaceAll(LABEL_DELIMITER, "")));
++			// handle globals by storing argument uniquely (don't split)
++			if (tokens.get(0).startsWith(GLOBAL_PREFIX)) {
++				lineList.add(clean(tokens.get(0).replaceAll(LABEL_DELIMITER, "").trim().toLowerCase()));
++				lineList.add(tokens.get(1).trim());
++				tokens.remove(1);
++			}
++			else {
++				lineList.add(clean(tokens.get(0).replaceAll(LABEL_DELIMITER, "").trim().toLowerCase()));
++			}
+ 			tokens.remove(0); // remove label from tokens to make parsing args easier
+ 		}
+ 		else // if there is no label, add blank string
+@@ -387,13 +403,12 @@ public class Assemble {
+ 		
+ 		// parse and store arges into lineList
+ 		if (tokens.size() > 0) {
+-			
+-			// args can be space, comman, or tab delimited
++			// args can be space, comma, or tab delimited
+ 			String[] args = tokens.get(0).split(DELIMITER_PATTERN);
+ 			
+ 			for (String a : args) {
+ 				if (!a.isEmpty())
+-					lineList.add(clean(a)); // add all parameters
++					lineList.add(clean(a.toLowerCase())); // add all parameters
+ 			}
+ 		}
+ 		
+@@ -445,16 +460,22 @@ public class Assemble {
+ 	public static void initialize() {
+ 		String oper = null;
+ 		while ( !(oper = lines.get(0).get(LABEL_POSITION)).equals(".teak")) {
+-			String arg0 = lines.get(0).get(LABEL_POSITION+1);
++			String arg0 = null;
+ 			switch(oper) {
+ 				case ".glyph_init":
++					arg0 = lines.get(0).get(LABEL_POSITION+1);
+ 					glyphGen(arg0);
+ 					lines.remove(0); // remove initializer
+ 					break;
+ 				case ".screen_init":
++					arg0 = lines.get(0).get(LABEL_POSITION+1);
+ 					screenGen(arg0);
+ 					lines.remove(0); // remove initializer
+ 					break;
++				case ".data": // invariant, data will be right before .teak
++					lines.remove(0); // remove initializer
++					initializeData();
++					break;
+ 			}
+ 		}
+ 		lines.remove(0); // finally remove .teak
+@@ -462,6 +483,32 @@ public class Assemble {
+ 		return;
+ 	}
+ 	
++	private static void initializeData() {
++		int pointerAddr = output.size();
++		String label = null;
++		while ( !(label = lines.get(0).get(LABEL_POSITION)).equals(".teak")) {
++			if (label.startsWith(GLOBAL_PREFIX)) {
++				String arg0 = lines.get(0).get(GLOBAL_ASSIGN_POSITION);
++				if (arg0.equals(".size")) {
++
++				}
++				else if (arg0.matches("^\".*\"$")){
++					labels.put(label, pointerAddr);
++					arg0 = arg0.replaceAll("\"", "");
++					char[] chars = arg0.toCharArray();
++					for (int c : chars) {
++						output.add(convertImmToBinary(c, 16));
++					}
++					output.add(convertImmToBinary(0, 16)); // add null terminator
++					pointerAddr += chars.length + 1; // for next address
++					lines.remove(0);
++				}
++			}
++		}
++		
++		return;
++	}
++	
+ 	/*
+ 	|--------------------------------------------------------------------------
+ 	| MACHINE CODE OUTPUT FUNCTIONS
+@@ -638,7 +685,7 @@ public class Assemble {
+ 	 * @return formated line
+ 	 */
+ 	public static String format(String line) {
+-		line = line.toLowerCase(); // operate on lower case
++		//line = line.toLowerCase(); // operate on lower case
+ 		line = line.replaceAll("[" + COMMENT + "].*", ""); // remove comments
+ 		
+ 		return line;
+@@ -659,8 +706,8 @@ public class Assemble {
+ 	 * @param register to decode
+ 	 * @return byte the decoded register number
+ 	 */
+-	public static byte encodeRegister(String register) {
+-			
++	public static int encodeRegister(String register) {
++		
+ 		if (!register.startsWith(REG_PREFIX)) {
+ 			throw new IllegalArgumentException("Registers must begin with a " + REG_PREFIX);
+ 		}
+@@ -668,7 +715,6 @@ public class Assemble {
+ 			register = register.replace(REG_PREFIX, ""); // remove $
+ 		}
+ 		
+-		
+ 		switch (register) {
+ 			case "0":
+ 			case ZERO_REG:	return 0;
+@@ -683,7 +729,7 @@ public class Assemble {
+ 		}
+ 		else {
+ 			register = register.replace(REG_PREFIX_CHAR, ""); // remove r
+-			byte number = Byte.parseByte(register); // all that's left is the number
++			int number = Integer.parseInt(register); // all that's left is the number
+ 			if (number > 11) {
+ 				throw new IllegalArgumentException("There are only 16 registers including: zero, "
+ 						+ "ret, sp, ra and registers 1-11");
