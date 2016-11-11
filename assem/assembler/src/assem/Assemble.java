@@ -75,9 +75,21 @@ public class Assemble {
 		// rType instructions
 		InstructionOpCodes.put("add",   new Integer[] {RTYPE_OPCODE, 0});
 		InstructionOpCodes.put("sub",   new Integer[] {RTYPE_OPCODE, 1});
-		
+		InstructionOpCodes.put("comp",  new Integer[] {RTYPE_OPCODE, 1});
+		InstructionOpCodes.put("and",   new Integer[] {RTYPE_OPCODE, 2});
+		InstructionOpCodes.put("or",    new Integer[] {RTYPE_OPCODE, 3});
+		InstructionOpCodes.put("xor",   new Integer[] {RTYPE_OPCODE, 4});
+		InstructionOpCodes.put("sll",   new Integer[] {RTYPE_OPCODE, 5});
+		InstructionOpCodes.put("srl",   new Integer[] {RTYPE_OPCODE, 6});
+		InstructionOpCodes.put("sra",   new Integer[] {RTYPE_OPCODE, 7});
+
 		// iType instructions
 		InstructionOpCodes.put("addi",  new Integer[] {ITYPE_OPCODE, 0});
+		InstructionOpCodes.put("subi",  new Integer[] {ITYPE_OPCODE, 1});
+		InstructionOpCodes.put("compi", new Integer[] {ITYPE_OPCODE, 1});
+		InstructionOpCodes.put("andi",  new Integer[] {ITYPE_OPCODE, 2});
+		InstructionOpCodes.put("ori",   new Integer[] {ITYPE_OPCODE, 3});
+		InstructionOpCodes.put("xori",  new Integer[] {ITYPE_OPCODE, 4});
 		InstructionOpCodes.put("li",    new Integer[] {ITYPE_OPCODE, 7});
 		
 		// mType instructions
@@ -86,6 +98,8 @@ public class Assemble {
 		
 		// jType instructions
 		InstructionOpCodes.put("jl",    new Integer[] {JTYPE_OPCODE, 0});
+		InstructionOpCodes.put("beq",   new Integer[] {JTYPE_OPCODE, 1});
+		InstructionOpCodes.put("bne",   new Integer[] {JTYPE_OPCODE, 2});
 	}
 	
 	// assembler variables
@@ -118,14 +132,14 @@ public class Assemble {
 	public static void main(String[] args) {
 		
 		String assemblyFile = null;
-		String outputFile = "mem.coe"; // default
-		int outputRadix = 2; // default
+		String outputFile = "branch-beq.coe"; // default
+		int outputRadix = 16; // default
 		
 		// set parameters based on input arguments
 		switch(args.length) {
-			case 0:
+			/*case 0:
 				System.out.println(HELP); // print help description
-				return;
+				return;*/
 			case 3:
 				outputRadix = Integer.parseInt(args[2]);
 			case 2:
@@ -134,6 +148,8 @@ public class Assemble {
 				assemblyFile = args[0];
 				break;
 		}
+		
+		assemblyFile = "branch-beq.teak";
 		
 		System.out.format("Assembling '%s' into '%s' (using radix %d) \n", assemblyFile, outputFile, outputRadix);
 		long start = System.currentTimeMillis(); // time execution time and report
@@ -155,10 +171,10 @@ public class Assemble {
 //		for (List<String> l : lines) {
 //			System.out.println(l);
 //		}
-//		
-//
+		
+
 //		labels.forEach((k,v)->System.out.println(k + ": " + v));
-//		
+		
 //		int i = 0;
 //		for (String o : output)
 //			System.out.println(i++ + ": " + o);
@@ -179,7 +195,7 @@ public class Assemble {
 	/**
 	 * Processes each line and properly encodes each instruction, immediate,
 	 * register, and address into a bit string. Simple implementation for use
-	 * with barebones core
+	 * with bare bones core
 	 */
 	private static void encodeSimple() {
 		
@@ -235,7 +251,7 @@ public class Assemble {
 						encoding = encodeMType(opCode, function, l.get(MTYPE_BANK_POSITION), l.get(MTYPE_MEM_REG_POSITION), l.get(MTYPE_DST_REG_POSITION));
 						break;
 					case JTYPE_OPCODE:
-						encoding = encodeJType(opCode, function, l.get(JTYPE_ADDR_POSITION));
+						encoding = encodeJType(lines.indexOf(l), opCode, function, l.get(JTYPE_ADDR_POSITION));
 						break;
 				}
 				
@@ -291,7 +307,7 @@ public class Assemble {
 		return opCodeBits + instrCodeBits + bankBits +memAddrBits + destRegBits;
 	}
 	
-	public static String encodeJType(Integer opCode, String instruction, String address) {
+	public static String encodeJType(int currentLine, Integer opCode, String instruction, String address) {
 		
 		String opCodeBits = Assemble.convertImmToBinary(opCode, OPCODE_BIT_WIDTH);
 		String instrCodeBits = Assemble.convertImmToBinary(InstructionOpCodes.get(instruction)[INSTR_CODE_POSITION], 3);
@@ -301,8 +317,10 @@ public class Assemble {
 		
 		if (valueOutOfBounds(addrValue, JUMP_ADDRESS_BIT_WIDTH))
 			throw new NumberFormatException();
-		else 
+		else {
+			addrValue = addrValue - (currentLine + 1);
 			addrBits = Assemble.convertImmToBinary(addrValue, JUMP_ADDRESS_BIT_WIDTH);
+		}
 		
 		return opCodeBits + instrCodeBits + addrBits;
 	}
@@ -687,8 +705,7 @@ public class Assemble {
 		if (imm.startsWith(HEX_PREFIX))  // match hex format
 			return Integer.parseInt(imm.replace(HEX_PREFIX, ""), 16);
 		else 
-			Integer.parseInt(imm, 10); // else match decimal
-		return 0;
+			return Integer.parseInt(imm, 10); // else match decimal
 	}
 	
 	/**
