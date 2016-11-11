@@ -1,0 +1,21 @@
+// prints a global string variable to the screen
+
+.screen_init: tale_of_two_cities.txt // 128x64 = 8192
+
+.glyph_init: ascii_8x8.png // 256x4 = 1024
+//.data
+	//@hello_world:	 "Hello World!"
+.teak // beginning of assembly code
+
+	sub   $r8, $r8
+	add   $r8, $r7//@hello_world // $r8 = hello_world pointer
+
+	li    $r9, 0x0		// vga location to write to
+loop:	read  $r10, $r8, 0 	// get char
+	compi $r10, 0 		// compare against null pointer
+	beq   done		// if char is null pointer, finish
+	write $r10, $r9, 0 	// write char to screen
+	addi  $r8, 1 		// increment pointer address
+	addi  $r9, 1 		// increment vga location
+	jl    loop
+done:
