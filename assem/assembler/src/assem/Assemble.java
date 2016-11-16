@@ -17,6 +17,21 @@ public class Assemble {
 	|
 	*/
 	
+	// memory size constants
+	private static final int SCREEN_MEM_SIZE 	  	= 8 * 1024;
+	private static final int GLYPH_MEM_SIZE			= 1024;
+	private static final int TEXT_MEM_SIZE 	  		= 8 * 1024;
+	private static final int DATA_MEM_SIZE			= 2* 1024;
+	private static final int INPUT_MEM_SIZE 	  	= 512;
+	private static final int OUTPUT_MEM_SIZE		= 512;
+	private static final int STACK_MEM_SIZE 	  	= 8 * 1024;
+	
+	// memory address constants
+	private static final int SCREEN_MEM_ADDR 	  	= 0;
+	private static final int GLYPH_MEM_ADDR			= SCREEN_MEM_ADDR + SCREEN_MEM_SIZE;
+	private static final int TEXT_MEM_ADDR			= GLYPH_MEM_ADDR + GLYPH_MEM_SIZE;
+	private static final int DATA_MEM_ADDR			= TEXT_MEM_ADDR + TEXT_MEM_SIZE;
+	
 	// lines list position constants
 	private static final int LINE_NUMBER_POSITION 	= 0; // position in lines list (source line number)
 	private static final int LABEL_POSITION 	  	= 1; // position in lines list
@@ -40,7 +55,7 @@ public class Assemble {
 	private static final String LABEL_DELIMITER 	= ":"; // colon
 	private static final String DELIMITER_PATTERN 	= "[ |\t|,]"; // spaces, tabs, and commas
 	private static final String SPECIAL_FUNC_PREFIX = "."; // period
-	private static final String COMMENT 			= "//"; // slash slash
+	private static final String COMMENT 			= "#"; // slash slash
 	private static final String HEX_PREFIX 			= "0x";
 	private static final String REG_PREFIX	    	= "$";
 	private static final String REG_PREFIX_CHAR 	= "r";
@@ -57,8 +72,9 @@ public class Assemble {
 	// bit widths (use for max value error checking)
 	private static final int JUMP_ADDRESS_BIT_WIDTH = 11; // max jump address = 2^11
 	private static final int IMMEDIATE_BIT_WIDTH    =  7; // max immediate value = 2^7
+	private static final int IMMEDIATE_MAX_VALUE    =  127; // max immediate value = 2^7
 	private static final int BANK_BIT_WIDTH 		=  5; // max bank size = 2^5
-	private static final int REG_CONTENTS_BIT_WIDTH = 16; // max register size = 2^16
+	private static final int MAX_VALUE				= 65535; // max register size = 2^16
 	
 	
 	// instruction mappings include opcode and instruction code
@@ -90,7 +106,9 @@ public class Assemble {
 		InstructionOpCodes.put("andi",  new Integer[] {ITYPE_OPCODE, 2});
 		InstructionOpCodes.put("ori",   new Integer[] {ITYPE_OPCODE, 3});
 		InstructionOpCodes.put("xori",  new Integer[] {ITYPE_OPCODE, 4});
-		InstructionOpCodes.put("li",    new Integer[] {ITYPE_OPCODE, 7});
+		InstructionOpCodes.put("slli",  new Integer[] {ITYPE_OPCODE, 5});
+		InstructionOpCodes.put("lui",   new Integer[] {ITYPE_OPCODE, 6});
+		InstructionOpCodes.put("lli",   new Integer[] {ITYPE_OPCODE, 7});
 		
 		// mType instructions
 		InstructionOpCodes.put("read",  new Integer[] {MTYPE_OPCODE, 0});
@@ -100,13 +118,31 @@ public class Assemble {
 		InstructionOpCodes.put("jl",    new Integer[] {JTYPE_OPCODE, 0});
 		InstructionOpCodes.put("beq",   new Integer[] {JTYPE_OPCODE, 1});
 		InstructionOpCodes.put("bne",   new Integer[] {JTYPE_OPCODE, 2});
+		InstructionOpCodes.put("blt",   new Integer[] {JTYPE_OPCODE, 5});
+		InstructionOpCodes.put("blteq", new Integer[] {JTYPE_OPCODE, 6});
+	}
+	
+	private static final Map<String, String> PseudoInstructions = new HashMap<>();
+	
+	static {
+		PseudoInstructions.put("li", "li");
+		PseudoInstructions.put("mov", "mov");
+		PseudoInstructions.put("push", "push");
+		PseudoInstructions.put("pop", "pop");
 	}
 	
 	// assembler variables
 	// list of lines stored in this format: <line#>, <label>?, <instruction>, <arguments>
 	private static List<List<String>> lines = new ArrayList<>(); 
-	private static List<String> output = new ArrayList<>(); // list of final bits to output
+    //private static List<String> output = new ArrayList<>(); // list of final bits to output
+	private static List<String> screenMem = new ArrayList<>(); // list of final bits to output
+	private static List<String> glyphMem = new ArrayList<>(); // list of final bits to output
+	private static List<String> textMem = new ArrayList<>(); // list of final bits to output
+	private static List<String> dataMem = new ArrayList<>(); // list of final bits to output
 	private static Map<String, Integer> labels = new HashMap<>(); // labels mapped to line address
+	private static Map<String, Integer> globals = new HashMap<>(); // globals mapped to memory address
+	private static boolean processingDataSection = false;
+	private static int globalPointer = DATA_MEM_ADDR;
 	
 	// help description
 	private static final String HELP = "Assemble - TEAK assembler v0.1 \n\n"
@@ -132,7 +168,7 @@ public class Assemble {
 	public static void main(String[] args) {
 		
 		String assemblyFile = null;
-		String outputFile = "branch-beq.coe"; // default
+		String outputFile = "mem.coe"; // default
 		int outputRadix = 16; // default
 		
 		// set parameters based on input arguments
@@ -150,20 +186,28 @@ public class Assemble {
 		}
 		
 		assemblyFile = "branch-beq.teak";
+		assemblyFile = "intToString.teak";
 		
 		System.out.format("Assembling '%s' into '%s' (using radix %d) \n", assemblyFile, outputFile, outputRadix);
 		long start = System.currentTimeMillis(); // time execution time and report
 		
 		// work
 		tokenize(assemblyFile); // split each line into tokens (labels, functions, registers, etc.)
+		
+		
+			
 		initialize(); // run any special .initializers before anything else
+		
+		for (List<String> l : lines) {
+			System.out.println(l);
+		}
 		map(); // map labels to a corresponding label address
 		encode(); // encode instructions and operators into machine code (bits)
-		generateMemory(outputFile, outputRadix); // write resulting machine code to .coe file
+		int size = generateMemory(outputFile, outputRadix); // write resulting machine code to .coe file
 		
 		long end = System.currentTimeMillis();
 		double time = (end-start)/1000d; // display execution time in seconds
-		System.out.format("Done. \nWrote %d words to '%s' in %.3fs \n", output.size(), outputFile, time);
+		System.out.format("Done. \nWrote %d words to '%s' in %.3fs \n", size, outputFile, time);
 		
 		
 		
@@ -205,16 +249,16 @@ public class Assemble {
 				
 				switch(function) {
 					case "read":
-						output.add(convertImmToBinary(0, 16));
+						textMem.add(convertImmToBinary(0, 16));
 						break;
 					case "incr":
-						output.add(convertImmToBinary(2, 16));
+						textMem.add(convertImmToBinary(2, 16));
 						break;
 					case "write":
-						output.add(convertImmToBinary(1, 16));
+						textMem.add(convertImmToBinary(1, 16));
 						break;
 					case "jump":
-						output.add(convertImmToBinary(3, 16));
+						textMem.add(convertImmToBinary(3, 16));
 						break;
 				}
 			}
@@ -255,7 +299,7 @@ public class Assemble {
 						break;
 				}
 				
-				output.add(encoding);
+				textMem.add(encoding);
 				
 			}
 		}
@@ -340,10 +384,10 @@ public class Assemble {
 			String line = null;
 			
 			// loop through lines and parse
-			int lineNumber = 0; // keep track of lines for debugging
+			int lineNumber = 1; // keep track of lines for debugging
 			while( (line = reader.readLine()) != null) {
+				line = format(line); // cleans line of whitespace and comments
 				if (!line.isEmpty()) { // only operate on lines with text
-					line = format(line); // cleans line of whitespace and comments
 					parseLine(line, lineNumber++);
 				}
 				else
@@ -370,17 +414,37 @@ public class Assemble {
 	 */
 	public static void parseLine(String line, int lineNumber) {
 		// split by labels (keep : delimiter)
-		ArrayList<String> tokens = new ArrayList<>(Arrays.asList(line.split("(?<=" + LABEL_DELIMITER + ")"))); 
+		ArrayList<String> tokens = new ArrayList<>(Arrays.asList(line.split("(?<=" + LABEL_DELIMITER + ")")));
 		
 		List<String> lineList = new ArrayList<>(); // list of parameters on line
 		lineList.add(String.format("%d", lineNumber));
+		
+		boolean addLine = true; // for use if instruction is a psuedo instruction
 		
 		// first element in line is defined as a label
 		// if no label exist, a blank string is stored in the first element
 		if (tokens.get(0).endsWith(LABEL_DELIMITER) || tokens.get(0).startsWith(SPECIAL_FUNC_PREFIX)) {
 			
-			lineList.add(clean(tokens.get(0).replaceAll(LABEL_DELIMITER, "")));
-			tokens.remove(0); // remove label from tokens to make parsing args easier
+			if (tokens.get(0).equals(".teak"))
+				processingDataSection = false;
+			
+			if (!processingDataSection) {
+				lineList.add(clean(tokens.get(0).replaceAll(LABEL_DELIMITER, "").trim().toLowerCase()));
+				tokens.remove(0); // remove label from tokens to make parsing args easier
+			}
+			else {
+				lineList.add(clean(tokens.get(0).replaceAll(LABEL_DELIMITER, "").trim().toLowerCase()));
+				lineList.add(tokens.get(1).trim());
+				tokens.remove(0); // remove label from tokens to make parsing args easier
+				tokens.remove(0);
+				processGlobalVar(lineList);
+				return;
+			}
+			
+			if (lineList.get(1).matches(".data")) {
+				processingDataSection = true;
+				return;
+			}
 		}
 		else // if there is no label, add blank string
 			lineList.add("");
@@ -392,16 +456,230 @@ public class Assemble {
 			String[] args = tokens.get(0).split(DELIMITER_PATTERN);
 			
 			for (String a : args) {
-				if (!a.isEmpty())
-					lineList.add(clean(a)); // add all parameters
+				if (!a.isEmpty()) {
+					if (globals.containsKey(a)) {
+						a = String.format("%d", globals.get(a));
+					}
+					lineList.add(clean(a.toLowerCase())); // add all parameters
+				}
+			}
+
+			if (PseudoInstructions.containsKey(lineList.get(FUNCTION_POSITION))) {
+				addLine = expandPsuedoInstruction(lineList, lineNumber);
 			}
 		}
 		
-		lines.add(lineList); // add this line the the lines list
+		if (addLine)
+			lines.add(lineList); // add this line the the lines list
 		
 		return;
 	}
 	
+	private static void processGlobalVar(List<String> lineList) {
+		
+		if (lineList.get(FUNCTION_POSITION).matches("^\".*\"$")) { // string match
+			globals.put(lineList.get(LABEL_POSITION), globalPointer);
+			String str = lineList.get(FUNCTION_POSITION).replaceAll("\"", "");
+			for (Character c : str.toCharArray()) {
+				System.out.println(globalPointer + ": " + convertImmToBinary((int) c, 16));
+				dataMem.add(convertImmToBinary((int) c, 16));
+				globalPointer++;
+			}
+			System.out.println(globalPointer + ": " + convertImmToBinary(0, 16));
+			dataMem.add(convertImmToBinary(0, 16)); // null terminator
+			globalPointer++;
+		}
+		else if (lineList.get(FUNCTION_POSITION).startsWith(".size")) { // .size command
+			globals.put(lineList.get(LABEL_POSITION), globalPointer);
+			String sizeStr = lineList.get(FUNCTION_POSITION).replaceAll(".size", "").trim(); // get size
+			int size = parseImmediate(sizeStr);
+			for (int i = 0; i < size; i++) {
+				System.out.println(globalPointer + ": " + convertImmToBinary(0, 16));
+				dataMem.add(convertImmToBinary(0, 16));
+				globalPointer++;
+			}
+		}
+	}
+
+	private static boolean expandPsuedoInstruction(List<String> lineList, int lineNumber) {
+		
+		switch(lineList.get(FUNCTION_POSITION)) {
+		
+			case "li":
+				
+				int imm = parseImmediate(lineList.get(ITYPE_IMM_POSITION));
+				String immBinary = convertImmToBinary(imm, 16);
+				String immUpper = String.format("%s", immBinary.substring(0, 7));
+				String immMiddle = String.format("%s", immBinary.substring(7, 14));
+				String immLowTwo = String.format("%s", immBinary.substring(14, 16));
+				
+				int immUp = Integer.parseInt(immUpper, 2);
+				int immMid = Integer.parseInt(immMiddle, 2);
+				int immLTwo = Integer.parseInt(immLowTwo, 2);
+				
+				System.out.format("%d: %s %s %s\n", imm, immUpper, immMiddle, immLowTwo);
+				
+				String label = lineList.get(LABEL_POSITION);
+				String reg = lineList.get(ITYPE_DST_REG_POSITION);
+				
+				List<String> first = new ArrayList<>();
+				List<String> second = new ArrayList<>();
+				List<String> third = new ArrayList<>();
+				List<String> fourth = new ArrayList<>();
+				
+				if (imm == 0) {
+					first.add(String.format("%d", lineNumber));
+					first.add(label);
+					first.add("sub");
+					first.add(reg);
+					first.add(reg);
+					lines.add(first);
+				}
+				else if (imm == MAX_VALUE) {
+					first.add(String.format("%d", lineNumber));
+					first.add(label);
+					first.add("sub"); // clear reg
+					first.add(reg);
+					first.add(reg);
+					lines.add(first);
+					
+					second.add(String.format("%d", lineNumber));
+					second.add("");
+					second.add("subi");
+					second.add(reg);
+					second.add("1"); // 0 - 1 = -1 which is all 1's in binary
+					lines.add(second);
+				}
+				else if (imm <= IMMEDIATE_MAX_VALUE){
+					first.add(String.format("%d", lineNumber));
+					first.add(label);
+					first.add("li");
+					first.add(reg);
+					first.add(String.format("%d", imm));
+					lines.add(first);
+				}
+				else {
+					first.add(String.format("%d", lineNumber));
+					first.add(label);
+					first.add("lui");
+					first.add(reg);
+					first.add(String.format("%d", immUp));
+					lines.add(first);
+					
+					label = "";
+					
+					second.add(String.format("%d", lineNumber));
+					second.add(label);
+					second.add("ori");
+					second.add(reg);
+					second.add(String.format("%d", immMid));
+					lines.add(second);
+					
+					third.add(String.format("%d", lineNumber));
+					third.add(label);
+					third.add("slli");
+					third.add(reg);
+					third.add(String.format("%d", 2));
+					lines.add(third);
+					
+					if (immLTwo != 0) {
+						fourth.add(String.format("%d", lineNumber));
+						fourth.add(label);
+						fourth.add("ori");
+						fourth.add(reg);
+						fourth.add(String.format("%d", immLTwo));
+						lines.add(fourth);
+					}
+				}
+				
+				break;
+				
+			case "mov":
+				
+				label = lineList.get(LABEL_POSITION);
+				String reg1 = lineList.get(RTYPE_DST_REG_POSITION);
+				String reg2 = lineList.get(RTYPE_SRC_REG_POSITION);
+				
+				first = new ArrayList<>();
+				second = new ArrayList<>();
+				
+				first.add(String.format("%d", lineNumber));
+				first.add(label);
+				first.add("sub");
+				first.add(reg1);
+				first.add(reg1);
+				
+				second.add(String.format("%d", lineNumber));
+				second.add("");
+				second.add("add");
+				second.add(reg1);
+				second.add(reg2);
+				
+				lines.add(first);
+				lines.add(second);
+				
+				break;
+				
+			case "push":
+				
+				label = lineList.get(LABEL_POSITION);
+				reg = lineList.get(RTYPE_DST_REG_POSITION);
+				
+				first = new ArrayList<>();
+				second = new ArrayList<>();
+				
+				// $sp++
+				first.add(String.format("%d", lineNumber));
+				first.add(label);
+				first.add("addi");
+				first.add("$sp");
+				first.add("1");
+				
+				// push onto top of stack
+				second.add(String.format("%d", lineNumber));
+				second.add("");
+				second.add("write");
+				second.add(reg);
+				second.add("$sp"); // write to $sp
+				second.add("0"); // bank
+				
+				lines.add(first);
+				lines.add(second);
+				
+				break;
+				
+			case "pop":
+				
+				label = lineList.get(LABEL_POSITION);
+				reg = lineList.get(RTYPE_DST_REG_POSITION);
+				
+				first = new ArrayList<>();
+				second = new ArrayList<>();
+				
+				// pop off of stack
+				first.add(String.format("%d", lineNumber));
+				first.add(label);
+				first.add("read");
+				first.add(reg);
+				first.add("$sp");
+				first.add("0");
+				
+				// decrement stack pointer
+				second.add(String.format("%d", lineNumber));
+				second.add("");
+				second.add("subi");
+				second.add("$sp");
+				second.add("1");
+				
+				lines.add(first);
+				lines.add(second);
+				
+				break;
+		}
+		
+		return false;
+	}
+
 	/**
 	 * The map phase maps labels to their line number which will be translated into
 	 * a pc relative address later. Does error checking: labels cannot start with
@@ -472,13 +750,53 @@ public class Assemble {
 	|
 	*/
 	
-	public static void generateMemory(String outputFile, int radix) {
+	public static int generateMemory(String outputFile, int radix) {
+		List<String> output = null;
 		
 		try {
+			output = new ArrayList<>(); // list of final bits to output
+			
 			PrintWriter out = new PrintWriter(new File(outputFile));
 			out.println ("memory_initialization_radix=" + radix + ";");
 			out.println ("memory_initialization_vector=");
 			out.println();
+			
+			System.out.println(screenMem.size());
+			System.out.println(glyphMem.size());
+			System.out.println(textMem.size());
+			System.out.println(dataMem.size());
+			System.out.println();			
+			
+			zeroPad(screenMem, SCREEN_MEM_SIZE);
+			output.addAll(screenMem);
+			
+			if (glyphMem.size() > GLYPH_MEM_SIZE)
+				throw new IndexOutOfBoundsException("Glyph memory too large, must be less than " + GLYPH_MEM_SIZE);
+			else {
+				zeroPad(glyphMem, GLYPH_MEM_SIZE);
+				output.addAll(glyphMem);
+			}
+			
+			if (textMem.size() > TEXT_MEM_SIZE)
+				throw new IndexOutOfBoundsException("Too many instructions! Reduce number of instructions lower than " + TEXT_MEM_SIZE);
+			else {
+				zeroPad(textMem, TEXT_MEM_SIZE);
+				output.addAll(textMem);
+			}
+			
+			if (dataMem.size() > DATA_MEM_SIZE) {
+				throw new IndexOutOfBoundsException("Not enough data (global variable) memory! "
+						+ "Reduce data memory lower than " + DATA_MEM_SIZE);
+			}
+			else {
+				zeroPad(dataMem, DATA_MEM_SIZE);
+				output.addAll(dataMem);
+			}
+			
+			System.out.println(screenMem.size());
+			System.out.println(glyphMem.size());
+			System.out.println(textMem.size());
+			System.out.println(dataMem.size());
 			
 			int memSize = output.size();
 			
@@ -499,9 +817,22 @@ public class Assemble {
 			e.printStackTrace();
 		}
 		
-		return;
+		return output.size();
 	}
 	
+	private static void zeroPad(List<String> memory, int size) {
+		
+		if (memory.size() > size) {
+			throw new IndexOutOfBoundsException("Memory area too large, must be less than " + size);
+		}
+		else {
+			int wordsToAdd = size - memory.size();
+			for (int i = 0; i < wordsToAdd; i++) {
+				memory.add(convertImmToBinary(0, 16));
+			}
+		}
+	}
+
 	/**
 	 * Generates ascii glyphs based on given glyphFile
 	 * @param glyphFile
@@ -551,7 +882,7 @@ public class Assemble {
 			String s = bitstream.toString();
 			
 			for (int i = 0; i < 256 * 4; i++) {
-				output.add(s.substring(i*16, (i+1)*16));
+				glyphMem.add(s.substring(i*16, (i+1)*16));
 			}
 			
 			
@@ -611,7 +942,7 @@ public class Assemble {
 			
 			for (int i = 0; i < 128 * 64; i++)
 			{
-				output.add(s.substring(i*16, (i+1)*16));
+				screenMem.add(s.substring(i*16, (i+1)*16));
 			}
 		
 		} catch (FileNotFoundException e) {
@@ -638,8 +969,8 @@ public class Assemble {
 	 * @return formated line
 	 */
 	public static String format(String line) {
-		line = line.toLowerCase(); // operate on lower case
-		line = line.replaceAll("[" + COMMENT + "].*", ""); // remove comments
+		line = line.trim();
+		line = line.replaceAll("[" + COMMENT + "].*", "").trim(); // remove comments
 		
 		return line;
 	}
@@ -721,9 +1052,9 @@ public class Assemble {
 			
 			String format = "%" + width + "s";
 			binary = Integer.toBinaryString(imm);
-			if (imm >=0 )
-				return String.format(format, binary).replace(' ', '0');
-			else // imm is negative 
+			if (width > binary.length())
+				return String.format(format, binary).replaceAll(" ", "0");
+			else
 				return String.format(format, binary.substring(binary.length()-width, binary.length()));
 			
 		} catch (StringIndexOutOfBoundsException e) {

@@ -1,15 +1,15 @@
-.screen_init: tale_of_two_cities.txt // 128x64 = 8192
+.screen_init: tale_of_two_cities.txt # 128x64 = 8192
 
-.glyph_init: ascii_8x8.png // 256x4 = 1024
+.glyph_init: ascii_8x8.png # 256x4 = 1024
 
-.teak // beginning of assembly code
+.teak # beginning of assembly code
 
-	li    $r2, 0x0 // $r2 = mem address, generally address values are written in hex
+	li    $r2, 0x0 # $r2 = mem address, generally address values are written in hex
 start:	read  $r1, $r2, 0
-	andi  $r1, 127 // zero out top 8 bits (color bits)
+	andi  $r1, 127 # zero out top 8 bits (color bits)
 	compi $r1, 116
-	bne   skip // if $r1 != ’t’ skip increment
-	addi  $r1, 117 // restore $r1 value + 1
+	bne   skip # if $r1 != ’t’ skip increment
+	addi  $r1, 117 # restore $r1 value + 1
 	write $r1, $r2, 0
 skip:	addi  $r2, 1
 	jl    start

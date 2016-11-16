@@ -1,0 +1,50 @@
+# data segment is a list of pointers in .data memory which
+# are null terminated to indicate the end of the array
+# symbols here cannot start with $
+
+# will need to load these into a register to access base address
+.data
+			hello_world: "Hello World!" # null terminator will be added
+			number: .size 6 # null terminator must be added by programmer
+
+# converts a integer into a string.
+# Returns a pointer to memory that is the start of the string
+# Strings are null terminated
+# ** need to define argument registers
+# max integer value: (2^16)-1 = 65535
+
+.teak # beginning of assembly code
+
+# if (integer > 65536) “error”
+
+# while (integer > 10000)
+#	integer = integer - 10000;
+#	ten_thousands++;
+# don’t store leading zero’s
+# … etc for other decimal places: 1000, 100, 10, 1
+
+# charToStore = value + 48 # offset into decimal chars
+# store into memory
+# … do for each decimal place (don’t store leading zeros)
+# store null terminator at the end
+
+			# load 65535
+			li   $r10, 65535
+
+			# now throw error if greater than 65535?
+
+			# load 10,000
+			li   $r9, 10000
+
+			li   $r8, number # load number base address into $r8
+
+			sub   $ret, $ret # zero out $ret
+
+k10:	comp  $r0,  $r10 # $r0 - $r10, $r0 <? 10000
+			blteq k10n
+			addi  $ret, 1    # +1 to return
+			jl    k10
+
+k10n:	addi  $ret, 48   # get ascii code
+			write $ret, $r8, 0  # store ascii code into number address
+			addi $r8, 1

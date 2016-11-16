@@ -1,15 +1,40 @@
-.screen_init: tale_of_two_cities.txt // 128x64 = 8192
+.screen_init: tale_of_two_cities.txt # 128x64 = 8192
 
-.glyph_init: ascii_8x8.png // 256x4 = 1024
+.glyph_init: ascii_8x8.png # 256x4 = 1024
 
-.teak // beginning of assembly code
+.teak # beginning of assembly code
 
-	li    $r2, 0x0 // $r2 = mem address, generally address values are written in hex
-start:	read  $r1, $r2, 0
-	andi  $r1, 127 // zero out top 8 bits (color bits)
-	compi $r1, 116
-	beq   skip // if $r1 != ’t’ skip increment
-	addi  $r1, 117 // restore $r1 value + 1
-	write $r1, $r2, 0
-skip:	addi  $r2, 1
-	jl    start
+				li    $r10 8191
+memres:	li    $r2, 0x0 # $r2 = mem address, generally address values are written in hex
+reset:	li 		$r6, 150 # inner loop limit
+				li 		$r3, 0 # inner loop
+				li 		$r5, 65000 # outer loop limit
+oreset:	li 		$r4, 0 # outer loop
+
+# loops to slow down processor
+
+oloop:	addi  $r4, 1
+				comp $r4, $r5
+				beq 	iloop # if $r4 == $r5 then increment inner loop
+				add  	$r4, $r5 # restore $r4
+				jl   oloop # loop
+
+iloop:	add  	$r4, $r5 # restore $r4 after above comparison
+				addi  $r3, 1
+				comp $r3, $r6
+				beq 	start
+				add   $r3, $r6
+				jl   oreset
+
+start:	add 	$r3, $r6
+				read  $r1, $r2, 0
+				andi  $r1, 127 # zero out top 8 bits (color bits)
+				compi $r1, 116
+				beq   skip # if $r1 != ’t’ skip increment
+				addi  $r1, 117 # restore $r1 value + 1
+				write $r1, $r2, 0
+skip:		addi  $r2, 1
+				comp  $r2, $r10
+				beq   memres
+				add  	$r2, $r10
+				jl    reset
