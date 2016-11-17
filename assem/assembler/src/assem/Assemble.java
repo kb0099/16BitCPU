@@ -146,11 +146,11 @@ public class Assemble {
 	
 	// help description
 	private static final String HELP = "Assemble - TEAK assembler v0.1 \n\n"
-									 + "usage: Assemble [.teak file] [.coe output file]? [output radix]? \n\n"
+									 + "usage: Assemble <.teak file> <.coe output file>? <output radix>? \n\n"
 									 + "arguments: \n"
-									 + "\t [.teak file] \t\t the name of a .teak assembly file to assemble into machine code (bits) \n"
-									 + "\t [.coe output file] \t (optional) the name of a .coe file to write machine code to (defaults to 'mem.coe') \n"
-									 + "\t [output radix] \t (optional) bit radix to use, 2 (binary, default) or 16 (hexadecimal) \n";
+									 + "\t <.teak file> \t\t the name of a .teak assembly file to assemble into machine code (bits) \n"
+									 + "\t <.coe output file> \t (optional) the name of a .coe file to write machine code to (defaults to 'mem.coe') \n"
+									 + "\t <output radix> \t (optional) bit radix to use, 2 (binary, default) or 16 (hexadecimal) \n";
 
 	/*
 	|--------------------------------------------------------------------------
@@ -185,43 +185,41 @@ public class Assemble {
 				break;
 		}
 		
-		assemblyFile = "branch-beq.teak";
-		assemblyFile = "intToString.teak";
+		//assemblyFile = "branch-beq.teak";
+		assemblyFile = "programs/hello_world.teak";
 		
 		System.out.format("Assembling '%s' into '%s' (using radix %d) \n", assemblyFile, outputFile, outputRadix);
 		long start = System.currentTimeMillis(); // time execution time and report
 		
 		// work
-		tokenize(assemblyFile); // split each line into tokens (labels, functions, registers, etc.)
-		
-		
-			
+		tokenize(assemblyFile); // split each line into tokens (labels, functions, registers, etc.)	
 		initialize(); // run any special .initializers before anything else
-		
-		for (List<String> l : lines) {
-			System.out.println(l);
-		}
 		map(); // map labels to a corresponding label address
 		encode(); // encode instructions and operators into machine code (bits)
 		int size = generateMemory(outputFile, outputRadix); // write resulting machine code to .coe file
 		
+		String repeated = new String(new char[52]).replace("\0", "-");
+		System.out.println("\nInstructions found:");
+		System.out.println(repeated);
+		System.out.format("%-8s %-8s %-8s %-8s %-8s %-8s\n", "Line #", "Label", "Instr", "Oper1", "Oper2", "Oper3");
+		System.out.println(repeated);
+		for (List<String> l : lines) {
+			for (String s : l)
+				System.out.format("%-9s", s);
+			System.out.println();
+		}
+		System.out.println();
+		
+		System.out.println("Labels found:");
+		System.out.println(repeated);
+		System.out.format("%-8s %-8s\n", "Label", "Label Addr");
+		System.out.println(repeated);
+		labels.forEach((k,v)->System.out.format("%-8s %-8d\n", k, v));
+		System.out.println();
+		
 		long end = System.currentTimeMillis();
 		double time = (end-start)/1000d; // display execution time in seconds
-		System.out.format("Done. \nWrote %d words to '%s' in %.3fs \n", size, outputFile, time);
-		
-		
-		
-		
-//		for (List<String> l : lines) {
-//			System.out.println(l);
-//		}
-		
-
-//		labels.forEach((k,v)->System.out.println(k + ": " + v));
-		
-//		int i = 0;
-//		for (String o : output)
-//			System.out.println(i++ + ": " + o);
+		System.out.format("Done. \nWrote %d words to '%s' in %.3fs \n", size, outputFile, time);	
 		
 		return;
 	}
@@ -286,16 +284,16 @@ public class Assemble {
 				
 				switch(opCode) {
 					case RTYPE_OPCODE: 
-						encoding = encodeRType(opCode, function, l.get(RTYPE_SRC_REG_POSITION), l.get(RTYPE_DST_REG_POSITION));
+						encoding = encodeRType(function, l.get(RTYPE_SRC_REG_POSITION), l.get(RTYPE_DST_REG_POSITION));
 						break;
 					case ITYPE_OPCODE:
-						encoding = encodeIType(opCode, function, l.get(ITYPE_IMM_POSITION), l.get(ITYPE_DST_REG_POSITION));
+						encoding = encodeIType(function, l.get(ITYPE_IMM_POSITION), l.get(ITYPE_DST_REG_POSITION));
 						break;
 					case MTYPE_OPCODE:
-						encoding = encodeMType(opCode, function, l.get(MTYPE_BANK_POSITION), l.get(MTYPE_MEM_REG_POSITION), l.get(MTYPE_DST_REG_POSITION));
+						encoding = encodeMType(function, l.get(MTYPE_BANK_POSITION), l.get(MTYPE_MEM_REG_POSITION), l.get(MTYPE_DST_REG_POSITION));
 						break;
 					case JTYPE_OPCODE:
-						encoding = encodeJType(lines.indexOf(l), opCode, function, l.get(JTYPE_ADDR_POSITION));
+						encoding = encodeJType(lines.indexOf(l), function, l.get(JTYPE_ADDR_POSITION));
 						break;
 				}
 				
@@ -305,9 +303,16 @@ public class Assemble {
 		}
 	}
 	
-	public static String encodeRType(Integer opCode, String instruction, String srcReg, String destReg) {
+	/**
+	 * Encodes an R-Type (register operands only) instruction into machine code (bits)
+	 * @param instruction name (add, sub, etc.)
+	 * @param srcReg name ($r1, $sp, etc.)
+	 * @param destReg name ($r2, $ret, etc.)
+	 * @return encoded machine instruction
+	 */
+	private static String encodeRType(String instruction, String srcReg, String destReg) {
 		
-		String opCodeBits = convertImmToBinary(opCode, 2);
+		String opCodeBits = convertImmToBinary(0, 2);
 		String instrCodeBits = convertImmToBinary(InstructionOpCodes.get(instruction)[INSTR_CODE_POSITION], 3);
 		String destRegBits = convertImmToBinary(encodeRegister(destReg), 4);
 		String srcRegBits = convertImmToBinary(encodeRegister(srcReg), 4);
@@ -315,9 +320,16 @@ public class Assemble {
 		return opCodeBits + instrCodeBits + "000" + srcRegBits + destRegBits;
 	}
 	
-	public static String encodeIType(Integer opCode, String instruction, String imm, String destReg) {
+	/**
+	 * Encodes an I-Type (one operand is an immediate value) instruction into machine code (bits)
+	 * @param instruction name (addi, lui, etc.)
+	 * @param imm value (in decimal or hexidecimal form)
+	 * @param destReg name ($r3, $ret, etc.)
+	 * @return encoded machine instruction
+	 */
+	private static String encodeIType(String instruction, String imm, String destReg) {
 		
-		String opCodeBits = convertImmToBinary(opCode, OPCODE_BIT_WIDTH);
+		String opCodeBits = convertImmToBinary(1, OPCODE_BIT_WIDTH);
 		String instrCodeBits = convertImmToBinary(InstructionOpCodes.get(instruction)[INSTR_CODE_POSITION], 3);
 		String immBits = null;
 		String destRegBits = convertImmToBinary(encodeRegister(destReg), REG_BIT_WIDTH);
@@ -333,9 +345,17 @@ public class Assemble {
 		
 	}
 	
-	public static String encodeMType(Integer opCode, String instruction, String bank, String memAddress, String destReg) {
+	/**
+	 * Encodes an M-Type (read/write from/to memory) instruction into machine code (bits)
+	 * @param instruction name (read or write)
+	 * @param bank value (in decimal or hex)
+	 * @param memAddress reg name ($r6, $r7, etc.)
+	 * @param destReg name ($r1, $r2, etc.)
+	 * @return encoded machine instruction
+	 */
+	private static String encodeMType(String instruction, String bank, String memAddress, String destReg) {
 		
-		String opCodeBits = Assemble.convertImmToBinary(opCode, OPCODE_BIT_WIDTH);
+		String opCodeBits = Assemble.convertImmToBinary(2, OPCODE_BIT_WIDTH);
 		String instrCodeBits = Assemble.convertImmToBinary(InstructionOpCodes.get(instruction)[INSTR_CODE_POSITION], 1);
 		String bankBits = null;
 		String memAddrBits = Assemble.convertImmToBinary(Assemble.encodeRegister(memAddress), REG_BIT_WIDTH);
@@ -351,13 +371,27 @@ public class Assemble {
 		return opCodeBits + instrCodeBits + bankBits +memAddrBits + destRegBits;
 	}
 	
-	public static String encodeJType(int currentLine, Integer opCode, String instruction, String address) {
+	/**
+	 * Encodes an J-Type (operand is an instruction address) instruction into machine code (bits)
+	 * @param currentLine assembler is operating on
+	 * @param instruction name (jl, blt, etc.)
+	 * @param address label ("start", "end", etc.)
+	 * @return encoded machine instruction
+	 */
+	private static String encodeJType(int currentLine, String instruction, String address) {
 		
-		String opCodeBits = Assemble.convertImmToBinary(opCode, OPCODE_BIT_WIDTH);
+		String opCodeBits = Assemble.convertImmToBinary(3, OPCODE_BIT_WIDTH);
 		String instrCodeBits = Assemble.convertImmToBinary(InstructionOpCodes.get(instruction)[INSTR_CODE_POSITION], 3);
 		String addrBits = null;
 		
-		int addrValue = labels.get(address);
+		int addrValue = 0;
+		try {
+			addrValue = labels.get(address);
+		} catch (NullPointerException npe) {
+			System.err.println(errorMsg("unknown", address + " does not exist"));
+			npe.printStackTrace();
+		}
+		
 		
 		if (valueOutOfBounds(addrValue, JUMP_ADDRESS_BIT_WIDTH))
 			throw new NumberFormatException();
@@ -374,7 +408,7 @@ public class Assemble {
 	 * Most of this work is done in parseLine
 	 * @param assemblyFile
 	 */
-	public static void tokenize(String assemblyFile) {
+	private static void tokenize(String assemblyFile) {
 		// open file and parse
 		try {
 			// open file
@@ -412,7 +446,7 @@ public class Assemble {
 	 * element will be a blank string
 	 * @param line
 	 */
-	public static void parseLine(String line, int lineNumber) {
+	private static void parseLine(String line, int lineNumber) {
 		// split by labels (keep : delimiter)
 		ArrayList<String> tokens = new ArrayList<>(Arrays.asList(line.split("(?<=" + LABEL_DELIMITER + ")")));
 		
@@ -449,21 +483,24 @@ public class Assemble {
 		else // if there is no label, add blank string
 			lineList.add("");
 		
-		// parse and store arges into lineList
+		// parse and store args into lineList
 		if (tokens.size() > 0) {
 			
-			// args can be space, comman, or tab delimited
+			// args can be space, comma, or tab delimited
 			String[] args = tokens.get(0).split(DELIMITER_PATTERN);
 			
 			for (String a : args) {
 				if (!a.isEmpty()) {
+					// if token is a global label, replace with memory address
 					if (globals.containsKey(a)) {
 						a = String.format("%d", globals.get(a));
 					}
 					lineList.add(clean(a.toLowerCase())); // add all parameters
 				}
 			}
-
+			
+			// if instruction is a psuedo instruction, replace with corresponding instruction(s) and
+			// don't add line to lies (it will be added in the expandPsuedoInstructions method)
 			if (PseudoInstructions.containsKey(lineList.get(FUNCTION_POSITION))) {
 				addLine = expandPsuedoInstruction(lineList, lineNumber);
 			}
@@ -475,17 +512,19 @@ public class Assemble {
 		return;
 	}
 	
+	/**
+	 * Parses .data global section for string variables and maps them to a memory address
+	 * @param lineList to find gloab variable in (will be one line)
+	 */
 	private static void processGlobalVar(List<String> lineList) {
 		
 		if (lineList.get(FUNCTION_POSITION).matches("^\".*\"$")) { // string match
 			globals.put(lineList.get(LABEL_POSITION), globalPointer);
 			String str = lineList.get(FUNCTION_POSITION).replaceAll("\"", "");
 			for (Character c : str.toCharArray()) {
-				System.out.println(globalPointer + ": " + convertImmToBinary((int) c, 16));
 				dataMem.add(convertImmToBinary((int) c, 16));
 				globalPointer++;
 			}
-			System.out.println(globalPointer + ": " + convertImmToBinary(0, 16));
 			dataMem.add(convertImmToBinary(0, 16)); // null terminator
 			globalPointer++;
 		}
@@ -494,13 +533,19 @@ public class Assemble {
 			String sizeStr = lineList.get(FUNCTION_POSITION).replaceAll(".size", "").trim(); // get size
 			int size = parseImmediate(sizeStr);
 			for (int i = 0; i < size; i++) {
-				System.out.println(globalPointer + ": " + convertImmToBinary(0, 16));
 				dataMem.add(convertImmToBinary(0, 16));
 				globalPointer++;
 			}
 		}
 	}
-
+	
+	/**
+	 * Expands a psuedo instruction into the one or more supported instructions
+	 * Code is tightly coupled with supported instructions so be cautious about modifying
+	 * @param lineList of a line containing a pseudo instruction
+	 * @param lineNumber of currently processed line
+	 * @return boolean (always false) indicating to not add the psuedo instruction line in parseLine method
+	 */
 	private static boolean expandPsuedoInstruction(List<String> lineList, int lineNumber) {
 		
 		switch(lineList.get(FUNCTION_POSITION)) {
@@ -516,8 +561,6 @@ public class Assemble {
 				int immUp = Integer.parseInt(immUpper, 2);
 				int immMid = Integer.parseInt(immMiddle, 2);
 				int immLTwo = Integer.parseInt(immLowTwo, 2);
-				
-				System.out.format("%d: %s %s %s\n", imm, immUpper, immMiddle, immLowTwo);
 				
 				String label = lineList.get(LABEL_POSITION);
 				String reg = lineList.get(ITYPE_DST_REG_POSITION);
@@ -553,7 +596,7 @@ public class Assemble {
 				else if (imm <= IMMEDIATE_MAX_VALUE){
 					first.add(String.format("%d", lineNumber));
 					first.add(label);
-					first.add("li");
+					first.add("lli");
 					first.add(reg);
 					first.add(String.format("%d", imm));
 					lines.add(first);
@@ -704,12 +747,11 @@ public class Assemble {
 	}
 	
 	/**
-	 * 
-	 * @param lineNumber
-	 * @param errorString
-	 * @throws Exception
+	 * Error message handler to output an error with the line number of the offending code
+	 * @param lineNumber to print out with error
+	 * @param errorString to print out
 	 */
-	public static String errorMsg(String lineNumber, String errorString) {
+	private static String errorMsg(String lineNumber, String errorString) {
 		return "Error on line " + lineNumber + ": " + errorString;
 	}
 	
@@ -720,7 +762,7 @@ public class Assemble {
 	 * of instruction memory
 	 * @param line
 	 */
-	public static void initialize() {
+	private static void initialize() {
 		String oper = null;
 		while ( !(oper = lines.get(0).get(LABEL_POSITION)).equals(".teak")) {
 			String arg0 = lines.get(0).get(LABEL_POSITION+1);
@@ -750,7 +792,14 @@ public class Assemble {
 	|
 	*/
 	
-	public static int generateMemory(String outputFile, int radix) {
+	/**
+	 * Outputs the final words to the given .coe file
+	 * @param outputFile to output bits
+	 * @param radix to output to, either binary (2) or hex (16)
+	 * @return int total size of output memory (in number of words, words = 16 bits)
+	 */
+	private static int generateMemory(String outputFile, int radix) {
+		
 		List<String> output = null;
 		
 		try {
@@ -759,57 +808,34 @@ public class Assemble {
 			PrintWriter out = new PrintWriter(new File(outputFile));
 			out.println ("memory_initialization_radix=" + radix + ";");
 			out.println ("memory_initialization_vector=");
-			out.println();
-			
-			System.out.println(screenMem.size());
-			System.out.println(glyphMem.size());
-			System.out.println(textMem.size());
-			System.out.println(dataMem.size());
-			System.out.println();			
+			out.println();			
 			
 			zeroPad(screenMem, SCREEN_MEM_SIZE);
 			output.addAll(screenMem);
 			
-			if (glyphMem.size() > GLYPH_MEM_SIZE)
-				throw new IndexOutOfBoundsException("Glyph memory too large, must be less than " + GLYPH_MEM_SIZE);
-			else {
-				zeroPad(glyphMem, GLYPH_MEM_SIZE);
-				output.addAll(glyphMem);
-			}
+			zeroPad(glyphMem, GLYPH_MEM_SIZE);
+			output.addAll(glyphMem);
+
+			zeroPad(textMem, TEXT_MEM_SIZE);
+			output.addAll(textMem);
 			
-			if (textMem.size() > TEXT_MEM_SIZE)
-				throw new IndexOutOfBoundsException("Too many instructions! Reduce number of instructions lower than " + TEXT_MEM_SIZE);
-			else {
-				zeroPad(textMem, TEXT_MEM_SIZE);
-				output.addAll(textMem);
-			}
-			
-			if (dataMem.size() > DATA_MEM_SIZE) {
-				throw new IndexOutOfBoundsException("Not enough data (global variable) memory! "
-						+ "Reduce data memory lower than " + DATA_MEM_SIZE);
-			}
-			else {
-				zeroPad(dataMem, DATA_MEM_SIZE);
-				output.addAll(dataMem);
-			}
-			
-			System.out.println(screenMem.size());
-			System.out.println(glyphMem.size());
-			System.out.println(textMem.size());
-			System.out.println(dataMem.size());
+			zeroPad(dataMem, DATA_MEM_SIZE);
+			output.addAll(dataMem);
 			
 			int memSize = output.size();
 			
+			int i = 0;
 			for (String bitline : output) {
 				if (radix == 16)  // hex
 					out.print(binaryToHex(bitline));
 				else 
 					out.print(bitline);
 				
-				if (output.indexOf(bitline) == memSize-1) 
+				if (i == memSize-1) 
 					out.println(";"); // print semi-colon after last memory address
 				else 
 					out.println(",");
+				i++;
 			}
 			
 			out.close();
@@ -820,6 +846,11 @@ public class Assemble {
 		return output.size();
 	}
 	
+	/**
+	 * 
+	 * @param memory
+	 * @param size
+	 */
 	private static void zeroPad(List<String> memory, int size) {
 		
 		if (memory.size() > size) {
@@ -837,7 +868,7 @@ public class Assemble {
 	 * Generates ascii glyphs based on given glyphFile
 	 * @param glyphFile
 	 */
-	public static void glyphGen(String glyphFile) {
+	private static void glyphGen(String glyphFile) {
 		BufferedImage image = null;
 		try {
 			
@@ -898,7 +929,7 @@ public class Assemble {
 	 * Generates initial vga screen display based on given initFile
 	 * @param initFile
 	 */
-	public static void screenGen(String initFile) {
+	private static void screenGen(String initFile) {
 		FileReader text;
 		try {
 			text = new FileReader(new File(initFile));
@@ -1076,6 +1107,12 @@ public class Assemble {
 		return String.format("%4s", Integer.toString(decimal, 16)).replace(' ', '0');
 	}
 	
+	/**
+	 * Checks if a given value is out of bounds based on the given bit width
+	 * @param value to check
+	 * @param width to use when calculating max value
+	 * @return boolean
+	 */
 	public static boolean valueOutOfBounds(int value, int width) {
 		
 		if (value >= Math.pow(2, width))
