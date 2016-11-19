@@ -167,8 +167,11 @@ module NewFSMCore2(
   wire[15:0] instruction;
   assign instruction = IR;
   assign opcode = instruction[15:11];
+	
 
   localparam JUMP = 4'd10;
+	reg v;
+	
   always @(*) begin
     case(opcode[4:3])
       2'b00, 2'b01:
@@ -268,13 +271,15 @@ module NewFSMCore2(
 					LI 	= 4'd9;
 					
 	always @(*) begin
-	
+	v = 1'b0;
 		case (alu_controls)
 			ADD: begin
 				result = a + b;
+				v = (~a[15] & ~b[15] & result[15]) | (a[15] & b[15] & ~result[15]);
 			end
 			SUB: begin
 				result = a - b;
+				v = (~a[15] & b[15] & result[15]) | (a[15] & ~b[15] & ~result[15]); 
 			end
 			AND: begin
 				result = a & b;
@@ -315,8 +320,8 @@ module NewFSMCore2(
 	
 	// other logic
 	assign z 	= (result == 16'd0);
-	assign v 	= 1'b0;							// KTODO
-	assign lt 	= result[15];
+	//assign v 	= 1'b0;							// KTODO
+	assign lt 	= result[15] ^ v;
 	
 	
 
