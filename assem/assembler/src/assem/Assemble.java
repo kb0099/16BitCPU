@@ -165,7 +165,7 @@ public class Assemble {
 									 + "arguments: \n"
 									 + "\t <.teak file> \t\t the name of a .teak assembly file to assemble into machine code (bits) \n"
 									 + "\t <.coe output file> \t (optional) the name of a .coe file to write machine code to (defaults to 'mem.coe') \n"
-									 + "\t <output radix> \t (optional) bit radix to use, 2 (binary, default) or 16 (hexadecimal) \n";
+									 + "\t <output radix> \t (optional) bit radix to use, 2 (binary) or 16 (hexadecimal, default) \n";
 
 	/*
 	|--------------------------------------------------------------------------
@@ -183,7 +183,7 @@ public class Assemble {
 	public static void main(String[] args) {
 		
 		String assemblyFile = null;
-		String outputFile = "bleq-test.coe"; // default
+		String outputFile = "mem.coe"; // default
 		int outputRadix = 16; // default
 		
 		// set parameters based on input arguments
