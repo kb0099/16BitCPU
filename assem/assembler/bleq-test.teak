@@ -1,0 +1,33 @@
+# converts a number to a string and prints it to the screen
+.screen_init: tale_of_two_cities.txt # 128x64 = 8192
+
+.glyph_init: ascii_8x8.png # 256x4 = 1024
+
+.teak # beginning of assembly code
+
+      # blt $r1, $r2 # $r1 < $r2
+      # bgeq $r1, $r2 # blt $r2, $r1 # $r1 >= $r2
+
+      # bleq $r1, $r2 # $r1 <= $r2
+      # bgt $r1, $r2 # bleq $r2, $r1 # $r1 > $r2
+
+      li $r1, 100
+      li $r2, 100 # check equals
+      li $r3, 80 # check less than
+
+      bleq $r1, $r2, eq
+      li $r4, 0 # equal check fail
+
+      bleq $r1, $r3, less
+      li $r5, 0 # less than fail
+      jl fin
+
+eq:   li $r4, 1 # equal check pass
+
+      bleq $r1, $r3, less
+      li $r5, 0 # less than fail
+      jl fin
+
+less: li $r5, 1 # less than pass
+
+fin:  jl fin

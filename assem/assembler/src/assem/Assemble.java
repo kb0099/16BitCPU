@@ -116,10 +116,11 @@ public class Assemble {
 		
 		// jType instructions
 		InstructionOpCodes.put("jl",    new Integer[] {JTYPE_OPCODE, 0});
-		InstructionOpCodes.put("beq",   new Integer[] {JTYPE_OPCODE, 1});
-		InstructionOpCodes.put("bne",   new Integer[] {JTYPE_OPCODE, 2});
-		InstructionOpCodes.put("blt",   new Integer[] {JTYPE_OPCODE, 5});
-		InstructionOpCodes.put("blteq", new Integer[] {JTYPE_OPCODE, 6});
+		InstructionOpCodes.put("jeq",   new Integer[] {JTYPE_OPCODE, 1});
+		InstructionOpCodes.put("jne",   new Integer[] {JTYPE_OPCODE, 2});
+		InstructionOpCodes.put("jr",    new Integer[] {JTYPE_OPCODE, 4});
+		InstructionOpCodes.put("jlt",   new Integer[] {JTYPE_OPCODE, 5});
+		InstructionOpCodes.put("jleq",  new Integer[] {JTYPE_OPCODE, 6});
 	}
 	
 	private static final Map<String, String> PseudoInstructions = new HashMap<>();
@@ -129,6 +130,19 @@ public class Assemble {
 		PseudoInstructions.put("mov", "mov");
 		PseudoInstructions.put("push", "push");
 		PseudoInstructions.put("pop", "pop");
+		
+		PseudoInstructions.put("beq", "beq");
+		PseudoInstructions.put("bne", "bne");
+		PseudoInstructions.put("blt", "blt");
+		PseudoInstructions.put("bleq", "bleq");
+		
+		PseudoInstructions.put("bgt", "bgt");
+		PseudoInstructions.put("bgeq", "bgeq");
+		
+		PseudoInstructions.put("beqi", "beqi");
+		PseudoInstructions.put("bnei", "bne");
+		PseudoInstructions.put("blti", "blti");
+		PseudoInstructions.put("bleqi", "bleqi");
 	}
 	
 	// assembler variables
@@ -143,6 +157,7 @@ public class Assemble {
 	private static Map<String, Integer> globals = new HashMap<>(); // globals mapped to memory address
 	private static boolean processingDataSection = false;
 	private static int globalPointer = DATA_MEM_ADDR;
+	private static boolean error = false;
 	
 	// help description
 	private static final String HELP = "Assemble - TEAK assembler v0.1 \n\n"
@@ -168,7 +183,7 @@ public class Assemble {
 	public static void main(String[] args) {
 		
 		String assemblyFile = null;
-		String outputFile = "mem.coe"; // default
+		String outputFile = "bleq-test.coe"; // default
 		int outputRadix = 16; // default
 		
 		// set parameters based on input arguments
@@ -186,7 +201,7 @@ public class Assemble {
 		}
 		
 		//assemblyFile = "branch-beq.teak";
-		assemblyFile = "programs/hello_world.teak";
+		assemblyFile = "pseudo-test.teak";
 		
 		System.out.format("Assembling '%s' into '%s' (using radix %d) \n", assemblyFile, outputFile, outputRadix);
 		long start = System.currentTimeMillis(); // time execution time and report
@@ -196,30 +211,34 @@ public class Assemble {
 		initialize(); // run any special .initializers before anything else
 		map(); // map labels to a corresponding label address
 		encode(); // encode instructions and operators into machine code (bits)
-		int size = generateMemory(outputFile, outputRadix); // write resulting machine code to .coe file
 		
-		String repeated = new String(new char[52]).replace("\0", "-");
-		System.out.println("\nInstructions found:");
-		System.out.println(repeated);
-		System.out.format("%-8s %-8s %-8s %-8s %-8s %-8s\n", "Line #", "Label", "Instr", "Oper1", "Oper2", "Oper3");
-		System.out.println(repeated);
-		for (List<String> l : lines) {
-			for (String s : l)
-				System.out.format("%-9s", s);
+		if (!error) {
+			int size = generateMemory(outputFile, outputRadix); // write resulting machine code to .coe file
+			
+			String repeated = new String(new char[52]).replace("\0", "-");
+			System.out.println("\nInstructions found:");
+			System.out.println(repeated);
+			System.out.format("%-8s %-8s %-8s %-8s %-8s %-8s\n", "Line #", "Label", "Instr", "Oper1", "Oper2", "Oper3");
+			System.out.println(repeated);
+			for (List<String> l : lines) {
+				for (String s : l)
+					System.out.format("%-9s", s);
+				System.out.println();
+			}
 			System.out.println();
+			
+			System.out.println("Labels found:");
+			System.out.println(repeated);
+			System.out.format("%-8s %-8s\n", "Label", "Label Addr");
+			System.out.println(repeated);
+			labels.forEach((k,v)->System.out.format("%-8s %-8d\n", k, v));
+			System.out.println();
+			
+			long end = System.currentTimeMillis();
+			double time = (end-start)/1000d; // display execution time in seconds
+			System.out.format("Done. \nWrote %d words to '%s' in %.3fs \n", size, outputFile, time);
 		}
-		System.out.println();
 		
-		System.out.println("Labels found:");
-		System.out.println(repeated);
-		System.out.format("%-8s %-8s\n", "Label", "Label Addr");
-		System.out.println(repeated);
-		labels.forEach((k,v)->System.out.format("%-8s %-8d\n", k, v));
-		System.out.println();
-		
-		long end = System.currentTimeMillis();
-		double time = (end-start)/1000d; // display execution time in seconds
-		System.out.format("Done. \nWrote %d words to '%s' in %.3fs \n", size, outputFile, time);	
 		
 		return;
 	}
@@ -233,175 +252,6 @@ public class Assemble {
 	| source code including tokenizers, label mapping, etc.
 	|
 	*/
-	
-	/**
-	 * Processes each line and properly encodes each instruction, immediate,
-	 * register, and address into a bit string. Simple implementation for use
-	 * with bare bones core
-	 */
-	private static void encodeSimple() {
-		
-		for (List<String> l : lines) {
-			if (l.size() > 2) {
-				String function = l.get(FUNCTION_POSITION);
-				
-				switch(function) {
-					case "read":
-						textMem.add(convertImmToBinary(0, 16));
-						break;
-					case "incr":
-						textMem.add(convertImmToBinary(2, 16));
-						break;
-					case "write":
-						textMem.add(convertImmToBinary(1, 16));
-						break;
-					case "jump":
-						textMem.add(convertImmToBinary(3, 16));
-						break;
-				}
-			}
-		}
-	}
-	
-	/**
-	 * Processes each line and properly encodes each instruction, immediate,
-	 * register, and address into a bit string. 
-	 */
-	private static void encode() {
-		for (List<String> l : lines) {
-			if (l.size() > 2) { // line must have more than a line number and label
-				String function = l.get(FUNCTION_POSITION);
-				Integer opCode = null;
-				
-				try {
-					opCode = InstructionOpCodes.get(function)[OP_CODE_POSITION];
-				} catch (NullPointerException npe) {
-					System.err.println(errorMsg(l.get(LINE_NUMBER_POSITION), function + " instruction is not supported"));
-					npe.printStackTrace();
-				}
-				
-				String encoding = null;
-				
-				switch(opCode) {
-					case RTYPE_OPCODE: 
-						encoding = encodeRType(function, l.get(RTYPE_SRC_REG_POSITION), l.get(RTYPE_DST_REG_POSITION));
-						break;
-					case ITYPE_OPCODE:
-						encoding = encodeIType(function, l.get(ITYPE_IMM_POSITION), l.get(ITYPE_DST_REG_POSITION));
-						break;
-					case MTYPE_OPCODE:
-						encoding = encodeMType(function, l.get(MTYPE_BANK_POSITION), l.get(MTYPE_MEM_REG_POSITION), l.get(MTYPE_DST_REG_POSITION));
-						break;
-					case JTYPE_OPCODE:
-						encoding = encodeJType(lines.indexOf(l), function, l.get(JTYPE_ADDR_POSITION));
-						break;
-				}
-				
-				textMem.add(encoding);
-				
-			}
-		}
-	}
-	
-	/**
-	 * Encodes an R-Type (register operands only) instruction into machine code (bits)
-	 * @param instruction name (add, sub, etc.)
-	 * @param srcReg name ($r1, $sp, etc.)
-	 * @param destReg name ($r2, $ret, etc.)
-	 * @return encoded machine instruction
-	 */
-	private static String encodeRType(String instruction, String srcReg, String destReg) {
-		
-		String opCodeBits = convertImmToBinary(0, 2);
-		String instrCodeBits = convertImmToBinary(InstructionOpCodes.get(instruction)[INSTR_CODE_POSITION], 3);
-		String destRegBits = convertImmToBinary(encodeRegister(destReg), 4);
-		String srcRegBits = convertImmToBinary(encodeRegister(srcReg), 4);
-		
-		return opCodeBits + instrCodeBits + "000" + srcRegBits + destRegBits;
-	}
-	
-	/**
-	 * Encodes an I-Type (one operand is an immediate value) instruction into machine code (bits)
-	 * @param instruction name (addi, lui, etc.)
-	 * @param imm value (in decimal or hexidecimal form)
-	 * @param destReg name ($r3, $ret, etc.)
-	 * @return encoded machine instruction
-	 */
-	private static String encodeIType(String instruction, String imm, String destReg) {
-		
-		String opCodeBits = convertImmToBinary(1, OPCODE_BIT_WIDTH);
-		String instrCodeBits = convertImmToBinary(InstructionOpCodes.get(instruction)[INSTR_CODE_POSITION], 3);
-		String immBits = null;
-		String destRegBits = convertImmToBinary(encodeRegister(destReg), REG_BIT_WIDTH);
-		
-		int immValue = parseImmediate(imm);
-		
-		if (valueOutOfBounds(immValue, IMMEDIATE_BIT_WIDTH))
-			throw new NumberFormatException();
-		else 
-			immBits = Assemble.convertImmToBinary(immValue, IMMEDIATE_BIT_WIDTH);
-		
-		return opCodeBits + instrCodeBits + immBits + destRegBits;
-		
-	}
-	
-	/**
-	 * Encodes an M-Type (read/write from/to memory) instruction into machine code (bits)
-	 * @param instruction name (read or write)
-	 * @param bank value (in decimal or hex)
-	 * @param memAddress reg name ($r6, $r7, etc.)
-	 * @param destReg name ($r1, $r2, etc.)
-	 * @return encoded machine instruction
-	 */
-	private static String encodeMType(String instruction, String bank, String memAddress, String destReg) {
-		
-		String opCodeBits = Assemble.convertImmToBinary(2, OPCODE_BIT_WIDTH);
-		String instrCodeBits = Assemble.convertImmToBinary(InstructionOpCodes.get(instruction)[INSTR_CODE_POSITION], 1);
-		String bankBits = null;
-		String memAddrBits = Assemble.convertImmToBinary(Assemble.encodeRegister(memAddress), REG_BIT_WIDTH);
-		String destRegBits = Assemble.convertImmToBinary(Assemble.encodeRegister(destReg), REG_BIT_WIDTH);
-		
-		int bankValue = parseImmediate(bank);
-		
-		if (valueOutOfBounds(bankValue, BANK_BIT_WIDTH))
-			throw new NumberFormatException();
-		else 
-			bankBits = Assemble.convertImmToBinary(bankValue, BANK_BIT_WIDTH);
-		
-		return opCodeBits + instrCodeBits + bankBits +memAddrBits + destRegBits;
-	}
-	
-	/**
-	 * Encodes an J-Type (operand is an instruction address) instruction into machine code (bits)
-	 * @param currentLine assembler is operating on
-	 * @param instruction name (jl, blt, etc.)
-	 * @param address label ("start", "end", etc.)
-	 * @return encoded machine instruction
-	 */
-	private static String encodeJType(int currentLine, String instruction, String address) {
-		
-		String opCodeBits = Assemble.convertImmToBinary(3, OPCODE_BIT_WIDTH);
-		String instrCodeBits = Assemble.convertImmToBinary(InstructionOpCodes.get(instruction)[INSTR_CODE_POSITION], 3);
-		String addrBits = null;
-		
-		int addrValue = 0;
-		try {
-			addrValue = labels.get(address);
-		} catch (NullPointerException npe) {
-			System.err.println(errorMsg("unknown", address + " does not exist"));
-			npe.printStackTrace();
-		}
-		
-		
-		if (valueOutOfBounds(addrValue, JUMP_ADDRESS_BIT_WIDTH))
-			throw new NumberFormatException();
-		else {
-			addrValue = addrValue - (currentLine + 1);
-			addrBits = Assemble.convertImmToBinary(addrValue, JUMP_ADDRESS_BIT_WIDTH);
-		}
-		
-		return opCodeBits + instrCodeBits + addrBits;
-	}
 
 	/**
 	 * Tokenizes each line by storing each parameter into a list
@@ -541,12 +391,18 @@ public class Assemble {
 	
 	/**
 	 * Expands a psuedo instruction into the one or more supported instructions
-	 * Code is tightly coupled with supported instructions so be cautious about modifying
+	 * Code is tightly coupled with supported instructions so be cautious about modifying this function
 	 * @param lineList of a line containing a pseudo instruction
 	 * @param lineNumber of currently processed line
 	 * @return boolean (always false) indicating to not add the psuedo instruction line in parseLine method
 	 */
 	private static boolean expandPsuedoInstruction(List<String> lineList, int lineNumber) {
+		
+		String label = lineList.get(LABEL_POSITION);
+		List<String> first = new ArrayList<>();
+		List<String> second = new ArrayList<>();
+		List<String> third = new ArrayList<>();
+		List<String> fourth = new ArrayList<>();
 		
 		switch(lineList.get(FUNCTION_POSITION)) {
 		
@@ -554,21 +410,23 @@ public class Assemble {
 				
 				int imm = parseImmediate(lineList.get(ITYPE_IMM_POSITION));
 				String immBinary = convertImmToBinary(imm, 16);
+				String immUpTwo = String.format("%s", immBinary.substring(0, 2));
+				String immMidHigh = String.format("%s", immBinary.substring(2, 9));
+				String immLow = String.format("%s", immBinary.substring(9, 16));
+				
 				String immUpper = String.format("%s", immBinary.substring(0, 7));
 				String immMiddle = String.format("%s", immBinary.substring(7, 14));
 				String immLowTwo = String.format("%s", immBinary.substring(14, 16));
+				
+				int immUTwo = Integer.parseInt(immUpTwo, 2);
+				int immMHi = Integer.parseInt(immMidHigh, 2);
+				int immL = Integer.parseInt(immLow, 2);
 				
 				int immUp = Integer.parseInt(immUpper, 2);
 				int immMid = Integer.parseInt(immMiddle, 2);
 				int immLTwo = Integer.parseInt(immLowTwo, 2);
 				
-				String label = lineList.get(LABEL_POSITION);
 				String reg = lineList.get(ITYPE_DST_REG_POSITION);
-				
-				List<String> first = new ArrayList<>();
-				List<String> second = new ArrayList<>();
-				List<String> third = new ArrayList<>();
-				List<String> fourth = new ArrayList<>();
 				
 				if (imm == 0) {
 					first.add(String.format("%d", lineNumber));
@@ -576,7 +434,6 @@ public class Assemble {
 					first.add("sub");
 					first.add(reg);
 					first.add(reg);
-					lines.add(first);
 				}
 				else if (imm == MAX_VALUE) {
 					first.add(String.format("%d", lineNumber));
@@ -584,14 +441,12 @@ public class Assemble {
 					first.add("sub"); // clear reg
 					first.add(reg);
 					first.add(reg);
-					lines.add(first);
 					
 					second.add(String.format("%d", lineNumber));
 					second.add("");
 					second.add("subi");
 					second.add(reg);
 					second.add("1"); // 0 - 1 = -1 which is all 1's in binary
-					lines.add(second);
 				}
 				else if (imm <= IMMEDIATE_MAX_VALUE){
 					first.add(String.format("%d", lineNumber));
@@ -599,7 +454,23 @@ public class Assemble {
 					first.add("lli");
 					first.add(reg);
 					first.add(String.format("%d", imm));
-					lines.add(first);
+				}
+				else if (immUTwo == 0){
+					first.add(String.format("%d", lineNumber));
+					first.add(label);
+					first.add("lui");
+					first.add(reg);
+					first.add(String.format("%d", immMHi));
+					
+					label = "";
+					
+					if (immL != 0) {
+						second.add(String.format("%d", lineNumber));
+						second.add(label);
+						second.add("ori");
+						second.add(reg);
+						second.add(String.format("%d", immL));
+					}
 				}
 				else {
 					first.add(String.format("%d", lineNumber));
@@ -607,23 +478,22 @@ public class Assemble {
 					first.add("lui");
 					first.add(reg);
 					first.add(String.format("%d", immUp));
-					lines.add(first);
 					
 					label = "";
 					
-					second.add(String.format("%d", lineNumber));
-					second.add(label);
-					second.add("ori");
-					second.add(reg);
-					second.add(String.format("%d", immMid));
-					lines.add(second);
+					if (immMid != 0) {
+						second.add(String.format("%d", lineNumber));
+						second.add(label);
+						second.add("ori");
+						second.add(reg);
+						second.add(String.format("%d", immMid));
+					}
 					
 					third.add(String.format("%d", lineNumber));
 					third.add(label);
 					third.add("slli");
 					third.add(reg);
 					third.add(String.format("%d", 2));
-					lines.add(third);
 					
 					if (immLTwo != 0) {
 						fourth.add(String.format("%d", lineNumber));
@@ -631,7 +501,6 @@ public class Assemble {
 						fourth.add("ori");
 						fourth.add(reg);
 						fourth.add(String.format("%d", immLTwo));
-						lines.add(fourth);
 					}
 				}
 				
@@ -639,12 +508,8 @@ public class Assemble {
 				
 			case "mov":
 				
-				label = lineList.get(LABEL_POSITION);
 				String reg1 = lineList.get(RTYPE_DST_REG_POSITION);
 				String reg2 = lineList.get(RTYPE_SRC_REG_POSITION);
-				
-				first = new ArrayList<>();
-				second = new ArrayList<>();
 				
 				first.add(String.format("%d", lineNumber));
 				first.add(label);
@@ -658,18 +523,11 @@ public class Assemble {
 				second.add(reg1);
 				second.add(reg2);
 				
-				lines.add(first);
-				lines.add(second);
-				
 				break;
 				
 			case "push":
 				
-				label = lineList.get(LABEL_POSITION);
 				reg = lineList.get(RTYPE_DST_REG_POSITION);
-				
-				first = new ArrayList<>();
-				second = new ArrayList<>();
 				
 				// $sp++
 				first.add(String.format("%d", lineNumber));
@@ -686,18 +544,11 @@ public class Assemble {
 				second.add("$sp"); // write to $sp
 				second.add("0"); // bank
 				
-				lines.add(first);
-				lines.add(second);
-				
 				break;
 				
 			case "pop":
 				
-				label = lineList.get(LABEL_POSITION);
 				reg = lineList.get(RTYPE_DST_REG_POSITION);
-				
-				first = new ArrayList<>();
-				second = new ArrayList<>();
 				
 				// pop off of stack
 				first.add(String.format("%d", lineNumber));
@@ -714,45 +565,205 @@ public class Assemble {
 				second.add("$sp");
 				second.add("1");
 				
-				lines.add(first);
-				lines.add(second);
+				break;
+				
+			case "beq":
+				
+				reg1 = lineList.get(RTYPE_DST_REG_POSITION);
+				reg2 = lineList.get(RTYPE_SRC_REG_POSITION);
+				String jlabel = lineList.get(MTYPE_BANK_POSITION);
+				
+				first.add(String.format("%d", lineNumber));
+				first.add(label);
+				first.add("comp");
+				first.add(reg1);
+				first.add(reg2);
+				
+				second.add(String.format("%d", lineNumber));
+				second.add("");
+				second.add("jeq");
+				second.add(jlabel);
+				
+				break;
+				
+			case "bne":
+				
+				reg1 = lineList.get(RTYPE_DST_REG_POSITION);
+				reg2 = lineList.get(RTYPE_SRC_REG_POSITION);
+				jlabel = lineList.get(MTYPE_BANK_POSITION);
+				
+				first.add(String.format("%d", lineNumber));
+				first.add(label);
+				first.add("comp");
+				first.add(reg1);
+				first.add(reg2);
+				
+				second.add(String.format("%d", lineNumber));
+				second.add("");
+				second.add("jne");
+				second.add(jlabel);
+				
+				break;
+				
+			case "blt":
+				
+				reg1 = lineList.get(RTYPE_DST_REG_POSITION);
+				reg2 = lineList.get(RTYPE_SRC_REG_POSITION);
+				jlabel = lineList.get(MTYPE_BANK_POSITION);
+				
+				first.add(String.format("%d", lineNumber));
+				first.add(label);
+				first.add("comp");
+				first.add(reg1);
+				first.add(reg2);
+				
+				second.add(String.format("%d", lineNumber));
+				second.add("");
+				second.add("jlt");
+				second.add(jlabel);
+				
+				break;
+				
+			case "bleq":
+			
+				reg1 = lineList.get(RTYPE_DST_REG_POSITION);
+				reg2 = lineList.get(RTYPE_SRC_REG_POSITION);
+				jlabel = lineList.get(MTYPE_BANK_POSITION);
+				
+				first.add(String.format("%d", lineNumber));
+				first.add(label);
+				first.add("comp");
+				first.add(reg1);
+				first.add(reg2);
+				
+				second.add(String.format("%d", lineNumber));
+				second.add("");
+				second.add("jleq");
+				second.add(jlabel);
+				
+				break;
+				
+			case "bgt":
+				
+				reg1 = lineList.get(RTYPE_DST_REG_POSITION);
+				reg2 = lineList.get(RTYPE_SRC_REG_POSITION);
+				jlabel = lineList.get(MTYPE_BANK_POSITION);
+				
+				first.add(String.format("%d", lineNumber));
+				first.add(label);
+				first.add("comp");
+				first.add(reg2);
+				first.add(reg1);
+				
+				second.add(String.format("%d", lineNumber));
+				second.add("");
+				second.add("jleq");
+				second.add(jlabel);
+				
+				break;
+				
+			case "bgeq":
+				
+				reg1 = lineList.get(RTYPE_DST_REG_POSITION);
+				reg2 = lineList.get(RTYPE_SRC_REG_POSITION);
+				jlabel = lineList.get(MTYPE_BANK_POSITION);
+				
+				first.add(String.format("%d", lineNumber));
+				first.add(label);
+				first.add("comp");
+				first.add(reg2);
+				first.add(reg1);
+				
+				second.add(String.format("%d", lineNumber));
+				second.add("");
+				second.add("jlt");
+				second.add(jlabel);
+				
+				break;
+				
+			case "beqi":
+				
+				reg1 = lineList.get(RTYPE_DST_REG_POSITION);
+				String sImm = lineList.get(ITYPE_IMM_POSITION);
+				jlabel = lineList.get(MTYPE_BANK_POSITION);
+				
+				first.add(String.format("%d", lineNumber));
+				first.add(label);
+				first.add("compi");
+				first.add(reg1);
+				first.add(sImm);
+				
+				second.add(String.format("%d", lineNumber));
+				second.add("");
+				second.add("jeq");
+				second.add(jlabel);
+				
+				break;
+				
+			case "bnei":
+				
+				reg1 = lineList.get(RTYPE_DST_REG_POSITION);
+				sImm = lineList.get(ITYPE_IMM_POSITION);
+				jlabel = lineList.get(MTYPE_BANK_POSITION);
+				
+				first.add(String.format("%d", lineNumber));
+				first.add(label);
+				first.add("compi");
+				first.add(reg1);
+				first.add(sImm);
+				
+				second.add(String.format("%d", lineNumber));
+				second.add("");
+				second.add("jne");
+				second.add(jlabel);
+				
+				break;
+				
+			case "blti":
+				
+				reg1 = lineList.get(RTYPE_DST_REG_POSITION);
+				sImm = lineList.get(ITYPE_IMM_POSITION);
+				jlabel = lineList.get(MTYPE_BANK_POSITION);
+				
+				first.add(String.format("%d", lineNumber));
+				first.add(label);
+				first.add("compi");
+				first.add(reg1);
+				first.add(sImm);
+				
+				second.add(String.format("%d", lineNumber));
+				second.add("");
+				second.add("jlt");
+				second.add(jlabel);
+				
+				break;
+				
+			case "bleqi":
+			
+				reg1 = lineList.get(RTYPE_DST_REG_POSITION);
+				sImm = lineList.get(ITYPE_IMM_POSITION);
+				jlabel = lineList.get(MTYPE_BANK_POSITION);
+				
+				first.add(String.format("%d", lineNumber));
+				first.add(label);
+				first.add("compi");
+				first.add(reg1);
+				first.add(sImm);
+				
+				second.add(String.format("%d", lineNumber));
+				second.add("");
+				second.add("jleq");
+				second.add(jlabel);
 				
 				break;
 		}
 		
+		if (!first.isEmpty())  lines.add(first);
+		if (!second.isEmpty()) lines.add(second);
+		if (!third.isEmpty())  lines.add(third);
+		if (!fourth.isEmpty()) lines.add(fourth);
+ 		
 		return false;
-	}
-
-	/**
-	 * The map phase maps labels to their line number which will be translated into
-	 * a pc relative address later. Does error checking: labels cannot start with
-	 * a digit and all labels must be unique.
-	 */
-	private static void map() {
-		try {
-			for (List<String> l : lines) {
-				String label = (String) l.get(LABEL_POSITION);
-				if (!(label).isEmpty()) {
-					if (!label.matches(LABEL_FORMAT)) //
-						throw new AssemblerFormatException(errorMsg(l.get(LINE_NUMBER_POSITION), "Label '" + label + "' cannot start with a digit."));
-					if (labels.containsKey(label)) 
-						throw new AssemblerFormatException(errorMsg(l.get(LINE_NUMBER_POSITION), "Label '" + label + "' must be unique."));
-					else 
-						labels.put(label, lines.indexOf(l));
-				}
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-	
-	/**
-	 * Error message handler to output an error with the line number of the offending code
-	 * @param lineNumber to print out with error
-	 * @param errorString to print out
-	 */
-	private static String errorMsg(String lineNumber, String errorString) {
-		return "Error on line " + lineNumber + ": " + errorString;
 	}
 	
 	/**
@@ -780,6 +791,185 @@ public class Assemble {
 		lines.remove(0); // finally remove .teak
 		
 		return;
+	}
+
+	/**
+	 * The map phase maps labels to their line number which will be translated into
+	 * a pc relative address later. Does error checking: labels cannot start with
+	 * a digit and all labels must be unique.
+	 */
+	private static void map() {
+		try {
+			for (List<String> l : lines) {
+				String label = (String) l.get(LABEL_POSITION);
+				if (!(label).isEmpty()) {
+					if (!label.matches(LABEL_FORMAT)) //
+						throw new AssemblerFormatException(errorMsg(l.get(LINE_NUMBER_POSITION), "Label '" + label + "' cannot start with a digit."));
+					if (labels.containsKey(label)) 
+						throw new AssemblerFormatException(errorMsg(l.get(LINE_NUMBER_POSITION), "Label '" + label + "' must be unique."));
+					else 
+						labels.put(label, lines.indexOf(l));
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * Processes each line and properly encodes each instruction, immediate,
+	 * register, and address into a bit string. 
+	 */
+	private static void encode() {
+		for (List<String> l : lines) {
+			if (l.size() > 2) { // line must have more than a line number and label
+				String function = l.get(FUNCTION_POSITION);
+				Integer opCode = null;
+				
+				try {
+					opCode = InstructionOpCodes.get(function)[OP_CODE_POSITION];
+				} catch (NullPointerException npe) {
+					System.err.println(errorMsg(l.get(LINE_NUMBER_POSITION), function + " instruction is not supported"));
+					npe.printStackTrace();
+				}
+				
+				String encoding = null;
+				
+				switch(opCode) {
+					case RTYPE_OPCODE: 
+						encoding = encodeRType(function, l.get(RTYPE_SRC_REG_POSITION), l.get(RTYPE_DST_REG_POSITION));
+						break;
+					case ITYPE_OPCODE:
+						encoding = encodeIType(function, l.get(ITYPE_IMM_POSITION), l.get(ITYPE_DST_REG_POSITION));
+						break;
+					case MTYPE_OPCODE:
+						encoding = encodeMType(function, l.get(MTYPE_BANK_POSITION), l.get(MTYPE_MEM_REG_POSITION), l.get(MTYPE_DST_REG_POSITION));
+						break;
+					case JTYPE_OPCODE:
+						encoding = encodeJType(lines.indexOf(l), function, l.get(JTYPE_ADDR_POSITION));
+						break;
+				}
+				
+				textMem.add(encoding);
+				
+			}
+		}
+	}
+	
+	/**
+	 * Encodes an R-Type (register operands only) instruction into machine code (bits)
+	 * @param instruction name (add, sub, etc.)
+	 * @param srcReg name ($r1, $sp, etc.)
+	 * @param destReg name ($r2, $ret, etc.)
+	 * @return encoded machine instruction
+	 */
+	private static String encodeRType(String instruction, String srcReg, String destReg) {
+		
+		String opCodeBits = convertImmToBinary(0, 2);
+		String instrCodeBits = convertImmToBinary(InstructionOpCodes.get(instruction)[INSTR_CODE_POSITION], 3);
+		String destRegBits = convertImmToBinary(encodeRegister(destReg), 4);
+		String srcRegBits = convertImmToBinary(encodeRegister(srcReg), 4);
+		
+		return opCodeBits + instrCodeBits + "000" + srcRegBits + destRegBits;
+	}
+	
+	/**
+	 * Encodes an I-Type (one operand is an immediate value) instruction into machine code (bits)
+	 * @param instruction name (addi, lui, etc.)
+	 * @param imm value (in decimal or hexidecimal form)
+	 * @param destReg name ($r3, $ret, etc.)
+	 * @return encoded machine instruction
+	 */
+	private static String encodeIType(String instruction, String imm, String destReg) {
+		
+		String opCodeBits = convertImmToBinary(1, OPCODE_BIT_WIDTH);
+		String instrCodeBits = convertImmToBinary(InstructionOpCodes.get(instruction)[INSTR_CODE_POSITION], 3);
+		String immBits = null;
+		String destRegBits = convertImmToBinary(encodeRegister(destReg), REG_BIT_WIDTH);
+		
+		int immValue = parseImmediate(imm);
+		
+		if (valueOutOfBounds(immValue, IMMEDIATE_BIT_WIDTH))
+			throw new NumberFormatException();
+		else 
+			immBits = Assemble.convertImmToBinary(immValue, IMMEDIATE_BIT_WIDTH);
+		
+		return opCodeBits + instrCodeBits + immBits + destRegBits;
+		
+	}
+	
+	/**
+	 * Encodes an M-Type (read/write from/to memory) instruction into machine code (bits)
+	 * @param instruction name (read or write)
+	 * @param bank value (in decimal or hex)
+	 * @param memAddress reg name ($r6, $r7, etc.)
+	 * @param destReg name ($r1, $r2, etc.)
+	 * @return encoded machine instruction
+	 */
+	private static String encodeMType(String instruction, String bank, String memAddress, String destReg) {
+		
+		String opCodeBits = Assemble.convertImmToBinary(2, OPCODE_BIT_WIDTH);
+		String instrCodeBits = Assemble.convertImmToBinary(InstructionOpCodes.get(instruction)[INSTR_CODE_POSITION], 1);
+		String bankBits = null;
+		String memAddrBits = Assemble.convertImmToBinary(Assemble.encodeRegister(memAddress), REG_BIT_WIDTH);
+		String destRegBits = Assemble.convertImmToBinary(Assemble.encodeRegister(destReg), REG_BIT_WIDTH);
+		
+		int bankValue = parseImmediate(bank);
+		
+		if (valueOutOfBounds(bankValue, BANK_BIT_WIDTH))
+			throw new NumberFormatException();
+		else 
+			bankBits = Assemble.convertImmToBinary(bankValue, BANK_BIT_WIDTH);
+		
+		return opCodeBits + instrCodeBits + bankBits +memAddrBits + destRegBits;
+	}
+	
+	/**
+	 * Encodes an J-Type (operand is an instruction address) instruction into machine code (bits)
+	 * @param currentLine assembler is operating on
+	 * @param instruction name (jl, blt, etc.)
+	 * @param address label ("start", "end", etc.)
+	 * @return encoded machine instruction
+	 */
+	private static String encodeJType(int currentLine, String instruction, String address) {
+		
+		String opCodeBits = Assemble.convertImmToBinary(3, OPCODE_BIT_WIDTH);
+		String instrCodeBits = Assemble.convertImmToBinary(InstructionOpCodes.get(instruction)[INSTR_CODE_POSITION], 3);
+		
+		// if jr instruction (operand is register)
+		if (address.startsWith(REG_PREFIX)) {
+			if (instruction.equals("jr")) {
+				String jumpReg = convertImmToBinary(encodeRegister(address), REG_BIT_WIDTH);
+				String filler = convertImmToBinary(0, 7);
+				
+				return opCodeBits + instrCodeBits + filler + jumpReg;
+			}
+			else {
+				System.err.println(errorMsg("unknown", "only the 'jr' jump instruction can operate on registers"));
+				return "0";
+			}
+		}
+		else { // other jump types (operand is an 11 bit address)
+			String addrBits = null;
+			int addrValue = 0;
+			try {
+				addrValue = labels.get(address);
+			} catch (NullPointerException npe) {
+				System.err.println(errorMsg("unknown", address + " does not exist"));
+				npe.printStackTrace();
+			}
+			
+			if (valueOutOfBounds(addrValue, JUMP_ADDRESS_BIT_WIDTH))
+				throw new NumberFormatException();
+			else {
+				addrValue = addrValue - (currentLine + 1);
+				addrBits = Assemble.convertImmToBinary(addrValue, JUMP_ADDRESS_BIT_WIDTH);
+			}
+			
+			return opCodeBits + instrCodeBits + addrBits;
+		}
+		
+		
 	}
 	
 	/*
@@ -847,9 +1037,11 @@ public class Assemble {
 	}
 	
 	/**
-	 * 
-	 * @param memory
-	 * @param size
+	 * Pads the given memory list with zeros until filled up to size
+	 * ex. current memory size = 256, size should = 1024, 
+	 * will pad with 1024-256 = 768 words of zeros
+	 * @param memory list to pad
+	 * @param size that the memory list should be
 	 */
 	private static void zeroPad(List<String> memory, int size) {
 		
@@ -992,6 +1184,16 @@ public class Assemble {
 	| helper functions are only a few lines of code.
 	|
 	*/
+	
+	/**
+	 * Error message handler to output an error with the line number of the offending code
+	 * @param lineNumber to print out with error
+	 * @param errorString to print out
+	 */
+	public static String errorMsg(String lineNumber, String errorString) {
+		error = true;
+		return "Error on line " + lineNumber + ": " + errorString;
+	}
 
 	/**
 	 * Formats each line by making each line lowercase

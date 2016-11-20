@@ -1,7 +1,15 @@
+.screen_init: tale_of_two_cities.txt # 128x64 = 8192
+
+.glyph_init: ascii_8x8.png # 256x4 = 1024
 
 .teak # beginning of assembly code
 
-	li $r2, 0x0 # start at the beginning of text memory
-clear:	write $zero, $r2, 0 # clear character
-	addi $r2, 1 # increment to the next memory address
-	jl clear # repeat
+			li    $r1, 0x1FFF   # VGA screen limit
+			li    $r2, 0x0      # start at the beginning of text memory
+clr:  write $zero, $r2, 0 # clear character
+			comp  $r2, $r1			# make sure doesn't clear past vga screen
+			beq   done
+			add   $r2, $r1			# restore $r2
+			addi  $r2, 1        # increment to the next memory address
+			jl    clr         	# repeat
+done: jl done

@@ -3,8 +3,21 @@
 
 .teak
 
-li $r1, 65535
+       li $r1, 65535
 label: li $r2, 10000
-mov $r3, $r2
-push $r3
-pop $r4
+       mov $r3, $r2
+       push $r3
+       pop $r4
+
+       beq $r1, $r2, label
+       bne $r1, $r2, label
+       blt $r1, $r2, label
+       bleq $r1, $r2, label
+
+       bgt $r3, $r4, label
+       bgeq $r3, $r4, label
+
+       beqi $r1, 10, label
+       bnei $r1, 10, label
+       blti $r1, 10, label
+       bleqi $r1, 10, label
