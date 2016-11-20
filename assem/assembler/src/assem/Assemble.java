@@ -188,9 +188,9 @@ public class Assemble {
 		
 		// set parameters based on input arguments
 		switch(args.length) {
-			/*case 0:
+			case 0:
 				System.out.println(HELP); // print help description
-				return;*/
+				return;
 			case 3:
 				outputRadix = Integer.parseInt(args[2]);
 			case 2:
@@ -201,7 +201,7 @@ public class Assemble {
 		}
 		
 		//assemblyFile = "branch-beq.teak";
-		assemblyFile = "pseudo-test.teak";
+		//assemblyFile = "pseudo-test.teak";
 		
 		System.out.format("Assembling '%s' into '%s' (using radix %d) \n", assemblyFile, outputFile, outputRadix);
 		long start = System.currentTimeMillis(); // time execution time and report
