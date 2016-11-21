@@ -36,7 +36,7 @@ module NewFSMCore2(
   wire[10:0] 	jump_address;
   wire[10:4]	i_type_imm;
   wire[12:8]	m_type_imm;
-  wire we_c, sw, lw, i_type, r_type, z, v, m_type, j_type;  
+  wire we_c, sw, lw, i_type, r_type, z, m_type, j_type;  
   wire[23:0] data_mem_addr;
   wire[1:0] pc_select;
   reg we_d; 
