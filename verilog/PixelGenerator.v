@@ -42,19 +42,40 @@ module PixelGenerator(
 	parameter ADDR_TEXT   = 14'd0;
 	parameter ADDR_GLYPH   = ADDR_TEXT + SIZE_TEXT;
 	
-	 
+	reg 	  	  blink = 1'b0;
+	reg  [2:0] bg	  = 4'd0;
+	reg  [3:0] fg    = 4'd0;
+	
+	wire [7:0] fg_color;		  
+	wire [7:0] bg_color;
+	
 	// sequential logic
 	always@(posedge clk) begin
 		if (reset || !enable)
 			color <= 8'b00000000; // black
-			
+		
+		else if (pixel_state == GLYPH_FETCH) begin
+			blink <= pg_data[15];
+			bg    <= pg_data[14:12];
+			fg    <= pg_data[11:8];
+		end
+		
 		else if (pixel_state == SET_FOREGROUND) begin
 			// set color based on the appropriate glyph bit
-			if (line_counter[0] == 1'b0)
+			if (line_counter[0] == 1'b0) begin
 				// replication oper. {3{m}} = {m, m, m}
-				color <= {8 {pg_data[ 4'd8 + pixel_counter[2:0] ]}};  
-			else
-				color <= {8 {pg_data[ pixel_counter[2:0] ]}};
+				if (pg_data[ 4'd8 + pixel_counter[2:0] ]) // foreground
+					color <= fg_color;
+				else
+					color <= bg_color;
+			end
+			
+			else begin
+				if (pg_data[ pixel_counter[2:0] ])
+					color <= fg_color;
+				else
+					color <= bg_color;
+			end
 		end
 	end
 							
@@ -73,5 +94,8 @@ module PixelGenerator(
 		endcase
 			
 	end
+	
+	assign bg_color = { {3{bg[2]}}, {3{bg[1]}}, {2{bg[0]}} };
+	assign fg_color = { fg[3], {2{fg[2]}}, fg[3], {2{fg[1]}}, fg[3], fg[0] };
 
 endmodule
