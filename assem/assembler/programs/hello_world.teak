@@ -9,21 +9,43 @@
 
 .teak # beginning of assembly code
 
-      li    $r1, 0x1FFF   # VGA screen limit
-      li    $r2, 0x0      # start at the beginning of text memory
-clr:  write $zero, $r2, 0 # clear character
-      beq  $r2, $r1, prnt			# make sure doesn't clear past vga screen
-			add   $r2, $r1			# restore $r2
-      addi  $r2, 1        # increment to the next memory address
-      jl    clr         	# repeat
+# main program entry point
+main:	jal   clr_vga
+			li 	  $r1, hello_world # string to print
+			li    $r2, 0x0 # location to print to
+			jal   prnt
+hold:	jl    hold
 
-prnt: li    $r8, hello_world # $r8 = hello_world pointer
+# clears the vga screen of characters
+clr_vga:	li    $r1, 0x1FFF   # VGA screen limit
+      		li    $r2, 0x0      # start at the beginning of text memory
+clr_loop: write $zero, $r2, 0 # clear character
+      		beq  	$r2, $r1, clr_done # make sure doesn't clear past vga screen
+      		addi  $r2, 1        # increment to the next memory address
+      		jl    clr_loop     	# repeat
+clr_done: jr 		$ra
 
-			li    $r9, 0x0			# vga location to write to
-loop:	read  $r10, $r8, 0 	# get char
-			beq $r10, 0, done # if char is null pointer, finish			# 
-			write $r10, $r9, 0 	# write char to screen
-			addi  $r8, 1 				# increment pointer address
-			addi  $r9, 1 				# increment vga location
-			jl    loop
-done: jl 		done					# hold program
+# prints string pointed to at $r1 to vga screen at location $r2
+prnt: 		 mov   $r8, $r1 # $r8 = hello_world pointer
+					 mov   $r9, $r2	# vga location to write to
+					 li    $r1, 0  # no blink
+					 li    $r2, 3  # bg color, cyan
+					 li    $r3, 12 # fg color, red
+					 jal   make_style
+prnt_loop: read  $r10, $r8, 0 	# get char
+					 beqi  $r10, 0, prnt_done # if char is null pointer, finish
+					 or    $r10, $ret		  # apply style
+					 write $r10, $r9, 0 	# write char to screen
+					 addi  $r8, 1 				# increment pointer address
+					 addi  $r9, 1 				# increment vga location
+					 jl    prnt_loop
+prnt_done: jr 	 $ra
+
+# makes a char style given a blink, bg color, and fg color
+make_style: slli $r1, 3
+						or   $r1, $r2  # combine blink with bg color
+						slli $r1, 4
+						or	 $r1, $r3  # combine blink, bg with fg color
+						slli $r1, 8    # shift style to upper bits
+						mov  $ret, $r1 # set return reg
+						jr   $ra

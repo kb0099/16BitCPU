@@ -16,7 +16,8 @@
 			li 	 $r6, 0 # control variable
 loop: li   $ret, 0 # zero out $ret
 
-chck: blt  $r1,  $r10, done # $r1 - $r10, $r1 <=? $r10
+chck: comp  $r1,  $r10 # $r1 - $r10, $r1 <=? $r10
+			jlt  done
 			addi 	$ret, 1
 			jl 		chck
 
@@ -27,9 +28,7 @@ done: add 	$r1, $r10 # restore $r1
 
 case:	beqi $r6, 0, set_1k # case structure to determine decimal position to work on
 			beqi $r6, 1, set_100
-			addi  $r6, 1
 			beqi $r6, 2, set_10
-			addi  $r6, 2
 			beqi $r6, 3, set_1
 			jl    finish
 
@@ -38,15 +37,15 @@ set_1k: li $r10, 1000
 				jl loop
 
 set_100: li $r10, 100
-				 addi $r6, 2 # restore and +1
+				 addi $r6, 1
 				 jl loop
 
 set_10: li $r10, 10
-				addi $r6, 3 # restore and +1
+				addi $r6, 1
 				jl loop
 
 set_1: li $r10, 1
-			 addi $r6, 4 # restore and +1
+			 addi $r6, 1
 			 jl loop
 
 finish: li $r8 number
@@ -55,7 +54,6 @@ finish: li $r8 number
 			li    $r2, 0x0      # start at the beginning of text memory
 clr:  write $zero, $r2, 0 # clear character
 			beq  $r2, $r1, prnt # make sure doesn't clear past vga screen
-			add   $r2, $r1			# restore $r2
 			addi  $r2, 1        # increment to the next memory address
 			jl    clr         	# repeat
 

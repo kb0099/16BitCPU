@@ -64,6 +64,7 @@ public class Assemble {
 	private static final String SP_REG				= "sp";
 	private static final String RET_REG				= "ret";
 	private static final String RA_REG				= "ra";
+	private static final String AT_REG 				= "at";
 	
 	// encoding bit widths
 	private static final int OPCODE_BIT_WIDTH		= 2;
@@ -118,6 +119,7 @@ public class Assemble {
 		InstructionOpCodes.put("jl",    new Integer[] {JTYPE_OPCODE, 0});
 		InstructionOpCodes.put("jeq",   new Integer[] {JTYPE_OPCODE, 1});
 		InstructionOpCodes.put("jne",   new Integer[] {JTYPE_OPCODE, 2});
+		InstructionOpCodes.put("jal",   new Integer[] {JTYPE_OPCODE, 3});
 		InstructionOpCodes.put("jr",    new Integer[] {JTYPE_OPCODE, 4});
 		InstructionOpCodes.put("jlt",   new Integer[] {JTYPE_OPCODE, 5});
 		InstructionOpCodes.put("jleq",  new Integer[] {JTYPE_OPCODE, 6});
@@ -216,7 +218,7 @@ public class Assemble {
 			int size = generateMemory(outputFile, outputRadix); // write resulting machine code to .coe file
 			
 			String repeated = new String(new char[52]).replace("\0", "-");
-			System.out.println("\nInstructions found:");
+			System.out.format("\nInstructions found: %d\n", lines.size());
 			System.out.println(repeated);
 			System.out.format("%-8s %-8s %-8s %-8s %-8s %-8s\n", "Line #", "Label", "Instr", "Oper1", "Oper2", "Oper3");
 			System.out.println(repeated);
@@ -227,7 +229,7 @@ public class Assemble {
 			}
 			System.out.println();
 			
-			System.out.println("Labels found:");
+			System.out.format("Labels found: %d\n", labels.size());
 			System.out.println(repeated);
 			System.out.format("%-8s %-8s\n", "Label", "Label Addr");
 			System.out.println(repeated);
@@ -399,10 +401,94 @@ public class Assemble {
 	private static boolean expandPsuedoInstruction(List<String> lineList, int lineNumber) {
 		
 		String label = lineList.get(LABEL_POSITION);
+		String intermediateReg = REG_PREFIX + AT_REG; // use to prevent overwriting reg1
+		String func = lineList.get(FUNCTION_POSITION);
+		String reg1 = null;
+		String reg2 = null;
+		String jlabel = null;
+		String sImm = null;
 		List<String> first = new ArrayList<>();
 		List<String> second = new ArrayList<>();
 		List<String> third = new ArrayList<>();
 		List<String> fourth = new ArrayList<>();
+		
+		// branching instruction setup
+		if (func.equals("beq")  || func.equals("bne") || func.equals("blt") || 
+			func.equals("bleq") || func.equals("bgt") || func.equals("bgeq") ) {
+			
+			reg1 = lineList.get(RTYPE_DST_REG_POSITION);
+			reg2 = lineList.get(RTYPE_SRC_REG_POSITION);
+			jlabel = lineList.get(MTYPE_BANK_POSITION);
+			
+			if (!reg2.equals("$zero") && !reg2.equals("$0")) {
+				// mov
+				first.add(String.format("%d", lineNumber));
+				first.add(label);
+				first.add("sub");
+				first.add(intermediateReg);
+				first.add(intermediateReg);
+				
+				second.add(String.format("%d", lineNumber));
+				second.add("");
+				second.add("add");
+				second.add(intermediateReg);
+				second.add(reg1);
+				
+				// compare
+				third.add(String.format("%d", lineNumber));
+				third.add("");
+				third.add("comp");
+				third.add(intermediateReg);
+				third.add(reg2);
+			}
+			else {
+				// compare
+				third.add(String.format("%d", lineNumber));
+				third.add(label);
+				third.add("comp");
+				third.add(reg1);
+				third.add(reg2);
+			}
+			
+			
+		} 
+		else if (func.equals("beqi") || func.equals("bnei") || 
+				 func.equals("blti") || func.equals("bleqi")) {
+			
+			reg1 = lineList.get(RTYPE_DST_REG_POSITION);
+			sImm = lineList.get(ITYPE_IMM_POSITION);
+			jlabel = lineList.get(MTYPE_BANK_POSITION);
+			
+			if (!sImm.equals("0") && !sImm.equals("0x0")) {
+				// mov
+				first.add(String.format("%d", lineNumber));
+				first.add(label);
+				first.add("sub");
+				first.add(intermediateReg);
+				first.add(intermediateReg);
+				
+				second.add(String.format("%d", lineNumber));
+				second.add("");
+				second.add("add");
+				second.add(intermediateReg);
+				second.add(reg1);
+				
+				// compare
+				third.add(String.format("%d", lineNumber));
+				third.add(label);
+				third.add("compi");
+				third.add(intermediateReg);
+				third.add(sImm);
+			}
+			else {
+				// compare
+				third.add(String.format("%d", lineNumber));
+				third.add(label);
+				third.add("compi");
+				third.add(reg1);
+				third.add(sImm);
+			}
+		}
 		
 		switch(lineList.get(FUNCTION_POSITION)) {
 		
@@ -508,8 +594,8 @@ public class Assemble {
 				
 			case "mov":
 				
-				String reg1 = lineList.get(RTYPE_DST_REG_POSITION);
-				String reg2 = lineList.get(RTYPE_SRC_REG_POSITION);
+				reg1 = lineList.get(RTYPE_DST_REG_POSITION);
+				reg2 = lineList.get(RTYPE_SRC_REG_POSITION);
 				
 				first.add(String.format("%d", lineNumber));
 				first.add(label);
@@ -569,191 +655,92 @@ public class Assemble {
 				
 			case "beq":
 				
-				reg1 = lineList.get(RTYPE_DST_REG_POSITION);
-				reg2 = lineList.get(RTYPE_SRC_REG_POSITION);
-				String jlabel = lineList.get(MTYPE_BANK_POSITION);
-				
-				first.add(String.format("%d", lineNumber));
-				first.add(label);
-				first.add("comp");
-				first.add(reg1);
-				first.add(reg2);
-				
-				second.add(String.format("%d", lineNumber));
-				second.add("");
-				second.add("jeq");
-				second.add(jlabel);
+				// jeq
+				fourth.add(String.format("%d", lineNumber));
+				fourth.add("");
+				fourth.add("jeq");
+				fourth.add(jlabel);
 				
 				break;
 				
 			case "bne":
 				
-				reg1 = lineList.get(RTYPE_DST_REG_POSITION);
-				reg2 = lineList.get(RTYPE_SRC_REG_POSITION);
-				jlabel = lineList.get(MTYPE_BANK_POSITION);
-				
-				first.add(String.format("%d", lineNumber));
-				first.add(label);
-				first.add("comp");
-				first.add(reg1);
-				first.add(reg2);
-				
-				second.add(String.format("%d", lineNumber));
-				second.add("");
-				second.add("jne");
-				second.add(jlabel);
+				fourth.add(String.format("%d", lineNumber));
+				fourth.add("");
+				fourth.add("jne");
+				fourth.add(jlabel);
 				
 				break;
 				
 			case "blt":
 				
-				reg1 = lineList.get(RTYPE_DST_REG_POSITION);
-				reg2 = lineList.get(RTYPE_SRC_REG_POSITION);
-				jlabel = lineList.get(MTYPE_BANK_POSITION);
-				
-				first.add(String.format("%d", lineNumber));
-				first.add(label);
-				first.add("comp");
-				first.add(reg1);
-				first.add(reg2);
-				
-				second.add(String.format("%d", lineNumber));
-				second.add("");
-				second.add("jlt");
-				second.add(jlabel);
+				fourth.add(String.format("%d", lineNumber));
+				fourth.add("");
+				fourth.add("jlt");
+				fourth.add(jlabel);
 				
 				break;
 				
 			case "bleq":
-			
-				reg1 = lineList.get(RTYPE_DST_REG_POSITION);
-				reg2 = lineList.get(RTYPE_SRC_REG_POSITION);
-				jlabel = lineList.get(MTYPE_BANK_POSITION);
 				
-				first.add(String.format("%d", lineNumber));
-				first.add(label);
-				first.add("comp");
-				first.add(reg1);
-				first.add(reg2);
-				
-				second.add(String.format("%d", lineNumber));
-				second.add("");
-				second.add("jleq");
-				second.add(jlabel);
+				fourth.add(String.format("%d", lineNumber));
+				fourth.add("");
+				fourth.add("jleq");
+				fourth.add(jlabel);
 				
 				break;
 				
 			case "bgt":
 				
-				reg1 = lineList.get(RTYPE_DST_REG_POSITION);
-				reg2 = lineList.get(RTYPE_SRC_REG_POSITION);
-				jlabel = lineList.get(MTYPE_BANK_POSITION);
-				
-				first.add(String.format("%d", lineNumber));
-				first.add(label);
-				first.add("comp");
-				first.add(reg2);
-				first.add(reg1);
-				
-				second.add(String.format("%d", lineNumber));
-				second.add("");
-				second.add("jleq");
-				second.add(jlabel);
+				fourth.add(String.format("%d", lineNumber));
+				fourth.add("");
+				fourth.add("jleq");
+				fourth.add(jlabel);
 				
 				break;
 				
 			case "bgeq":
 				
-				reg1 = lineList.get(RTYPE_DST_REG_POSITION);
-				reg2 = lineList.get(RTYPE_SRC_REG_POSITION);
-				jlabel = lineList.get(MTYPE_BANK_POSITION);
-				
-				first.add(String.format("%d", lineNumber));
-				first.add(label);
-				first.add("comp");
-				first.add(reg2);
-				first.add(reg1);
-				
-				second.add(String.format("%d", lineNumber));
-				second.add("");
-				second.add("jlt");
-				second.add(jlabel);
+				fourth.add(String.format("%d", lineNumber));
+				fourth.add("");
+				fourth.add("jlt");
+				fourth.add(jlabel);
 				
 				break;
 				
 			case "beqi":
 				
-				reg1 = lineList.get(RTYPE_DST_REG_POSITION);
-				String sImm = lineList.get(ITYPE_IMM_POSITION);
-				jlabel = lineList.get(MTYPE_BANK_POSITION);
-				
-				first.add(String.format("%d", lineNumber));
-				first.add(label);
-				first.add("compi");
-				first.add(reg1);
-				first.add(sImm);
-				
-				second.add(String.format("%d", lineNumber));
-				second.add("");
-				second.add("jeq");
-				second.add(jlabel);
+				fourth.add(String.format("%d", lineNumber));
+				fourth.add("");
+				fourth.add("jeq");
+				fourth.add(jlabel);
 				
 				break;
 				
 			case "bnei":
 				
-				reg1 = lineList.get(RTYPE_DST_REG_POSITION);
-				sImm = lineList.get(ITYPE_IMM_POSITION);
-				jlabel = lineList.get(MTYPE_BANK_POSITION);
-				
-				first.add(String.format("%d", lineNumber));
-				first.add(label);
-				first.add("compi");
-				first.add(reg1);
-				first.add(sImm);
-				
-				second.add(String.format("%d", lineNumber));
-				second.add("");
-				second.add("jne");
-				second.add(jlabel);
+				fourth.add(String.format("%d", lineNumber));
+				fourth.add("");
+				fourth.add("jne");
+				fourth.add(jlabel);
 				
 				break;
 				
 			case "blti":
 				
-				reg1 = lineList.get(RTYPE_DST_REG_POSITION);
-				sImm = lineList.get(ITYPE_IMM_POSITION);
-				jlabel = lineList.get(MTYPE_BANK_POSITION);
-				
-				first.add(String.format("%d", lineNumber));
-				first.add(label);
-				first.add("compi");
-				first.add(reg1);
-				first.add(sImm);
-				
-				second.add(String.format("%d", lineNumber));
-				second.add("");
-				second.add("jlt");
-				second.add(jlabel);
+				fourth.add(String.format("%d", lineNumber));
+				fourth.add("");
+				fourth.add("jlt");
+				fourth.add(jlabel);
 				
 				break;
 				
 			case "bleqi":
-			
-				reg1 = lineList.get(RTYPE_DST_REG_POSITION);
-				sImm = lineList.get(ITYPE_IMM_POSITION);
-				jlabel = lineList.get(MTYPE_BANK_POSITION);
 				
-				first.add(String.format("%d", lineNumber));
-				first.add(label);
-				first.add("compi");
-				first.add(reg1);
-				first.add(sImm);
-				
-				second.add(String.format("%d", lineNumber));
-				second.add("");
-				second.add("jleq");
-				second.add(jlabel);
+				fourth.add(String.format("%d", lineNumber));
+				fourth.add("");
+				fourth.add("jleq");
+				fourth.add(jlabel);
 				
 				break;
 		}
@@ -1129,8 +1116,7 @@ public class Assemble {
 			StringBuilder bitstream = new StringBuilder();
 			
 			boolean ignoreWhitespace = true;
-			int color = 256;
-			boolean increment = false;
+			int color = 255;
 			
 			for (int row = 0; row < 64; row++)
 				for (int col = 0; col < 128; col++)
@@ -1141,24 +1127,24 @@ public class Assemble {
 					while (ignoreWhitespace && Character.isWhitespace(ch))
 						ch = text.read();
 					ignoreWhitespace = Character.isWhitespace(ch);
-					
-					if (color == 0)
-						increment = true;
-					else if (color == 255)
-						increment = false;
-	
-					if (increment)
-						color += 1;
-					else
-						color -= 1;
 	
 					if (col < 16 && row < 17 && row >= 1)
 						color = col + (row-1)*16;
 					
+					// blink
+					bitstream.append(0); 
+					// bg
+					bitstream.append(0);
+					bitstream.append(0);
+					bitstream.append(0);
+					// fg
+					bitstream.append(1);
+					bitstream.append(1);
+					bitstream.append(1);
+					bitstream.append(1);
+
 					for (int b = 7; b >= 0; b--)
-						bitstream.append ((color >> b) & 1);
-					for (int b = 7; b >= 0; b--)
-						bitstream.append ((ch >> b) & 1);				
+						bitstream.append((ch >> b) & 1);				
 				}
 			
 			String s = bitstream.toString();
@@ -1238,7 +1224,8 @@ public class Assemble {
 			case ZERO_REG:	return 0;
 			case RET_REG:	return 12;
 			case SP_REG:	return 13;
-			case RA_REG:	return 14;		
+			case RA_REG:	return 14;
+			case AT_REG:	return 15;
 		}
 		
 		if (!register.matches(REG_PATTERN)) {
