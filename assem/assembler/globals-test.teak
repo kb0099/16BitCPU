@@ -1,0 +1,15 @@
+.screen_init: tale_of_two_cities.txt # 128x64 = 8192
+
+.glyph_init: ascii_8x8.png # 256x4 = 1024
+
+.data
+			hello_world: "Hello World!"
+			empty: .size 12
+			address: 0x1FFF
+			number: 45600
+			array: {1, 2, 3, 4, 5}
+			another: {99, 88, 77, 66, 55, 44, 33, 22, 11}
+
+.teak # beginning of assembly code
+
+hold: jl hold

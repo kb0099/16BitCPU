@@ -217,28 +217,40 @@ public class Assemble {
 		if (!error) {
 			int size = generateMemory(outputFile, outputRadix); // write resulting machine code to .coe file
 			
-			String repeated = new String(new char[52]).replace("\0", "-");
+			// prints out instructions
+			String repeated = new String(new char[62]).replace("\0", "-");
 			System.out.format("\nInstructions found: %d\n", lines.size());
 			System.out.println(repeated);
-			System.out.format("%-8s %-8s %-8s %-8s %-8s %-8s\n", "Line #", "Label", "Instr", "Oper1", "Oper2", "Oper3");
+			System.out.format("%-10s %-10s %-10s %-10s %-10s %-10s\n", "Line #", "Label", "Instr", "Oper1", "Oper2", "Oper3");
 			System.out.println(repeated);
 			for (List<String> l : lines) {
 				for (String s : l)
-					System.out.format("%-9s", s);
+					System.out.format("%-11s", s);
 				System.out.println();
 			}
 			System.out.println();
 			
-			System.out.format("Labels found: %d\n", labels.size());
-			System.out.println(repeated);
-			System.out.format("%-8s %-8s\n", "Label", "Label Addr");
-			System.out.println(repeated);
-			labels.forEach((k,v)->System.out.format("%-8s %-8d\n", k, v));
-			System.out.println();
+			if (labels.size() != 0) { // prints our labels
+				System.out.format("Labels found: %d\n", labels.size());
+				System.out.println(repeated);
+				System.out.format("%-20s %-20s\n", "Label", "Label Addr");
+				System.out.println(repeated);
+				labels.forEach((k,v)->System.out.format("%-20s %-20d\n", k, v));
+				System.out.println();
+			}
+			
+			if (globals.size() != 0) { // prints out global variables
+				System.out.format("Global variables found: %d\n", globals.size());
+				System.out.println(repeated);
+				System.out.format("%-20s %-20s\n", "Variable", "Mem Addr");
+				System.out.println(repeated);
+				globals.forEach((k,v)->System.out.format("%-20s %-20d\n", k, v));
+				System.out.println();
+			}
 			
 			long end = System.currentTimeMillis();
 			double time = (end-start)/1000d; // display execution time in seconds
-			System.out.format("Done. \nWrote %d words to '%s' in %.3fs \n", size, outputFile, time);
+			System.out.format("Done \nWrote %d words to '%s' in %.3fs \n", size, outputFile, time);
 		}
 		
 		
@@ -388,7 +400,22 @@ public class Assemble {
 				dataMem.add(convertImmToBinary(0, 16));
 				globalPointer++;
 			}
+		} 
+		else if (lineList.get(FUNCTION_POSITION).matches("^\\{.*\\}$")) { // array of values
+			globals.put(lineList.get(LABEL_POSITION), globalPointer);
+			String str = lineList.get(FUNCTION_POSITION).replaceAll("\\{", "").replaceAll("\\}", "");
+			for (String s : str.split(",")) {
+				dataMem.add(convertImmToBinary(parseImmediate(s.trim()), 16));
+				globalPointer++;
+			}
 		}
+		else { // single value
+			globals.put(lineList.get(LABEL_POSITION), globalPointer);
+			int value = parseImmediate(lineList.get(FUNCTION_POSITION));
+			dataMem.add(convertImmToBinary(value, 16));
+			globalPointer++;
+		}
+		
 	}
 	
 	/**
