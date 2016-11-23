@@ -1,0 +1,16 @@
+# prints a global string variable to the screen
+
+.screen_init: init/main_screen.txt # 128x64 = 8192
+
+.glyph_init: ascii_8x8_ext.png # 256x4 = 1024
+
+.data
+			title: 0x0
+			menu_itm1: 0x0
+			menu_itm2: 0x0
+			menu_itm3: 0x0
+
+.teak # beginning of assembly code
+
+# main program entry point
+hold: jl hold

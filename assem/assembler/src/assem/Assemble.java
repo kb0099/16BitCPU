@@ -1076,9 +1076,14 @@ public class Assemble {
 	 */
 	private static void glyphGen(String glyphFile) {
 		BufferedImage image = null;
+		int fontSize = 8;
 		try {
 			
 			image = javax.imageio.ImageIO.read(new File(glyphFile));
+			int height = image.getHeight();
+			int width = image.getWidth();
+			int numChars = (height/fontSize) * (width/fontSize) + 32;
+			System.out.println("Glyph map info: " + width + "x" + height + ", Number of Chars: " + numChars);
 		
 			StringBuilder bitstream = new StringBuilder();
 			
@@ -1089,8 +1094,8 @@ public class Assemble {
 					bitstream.append("00000000");
 			}
 			
-			// generate ascii chars 32-127 based on glyphFile
-	        for (int i = 32; i < 128; i++)
+			// generate ascii chars 32-numChars based on glyphFile
+	        for (int i = 32; i < numChars; i++)
 	        {
 	        	int x = ((i-32) % 16) * 8;
 	        	int y = ((i-32) / 16) * 8;
@@ -1109,8 +1114,8 @@ public class Assemble {
 	        	}	
 	        }
 	        
-	        // set ascii chars 128-255 to blank
-			for (int i = 128; i < 256; i++)
+	        // set ascii chars numChars-255 to blank
+			for (int i = numChars; i < 256; i++)
 			{
 				for (int b = 0; b < 8; b++)
 					bitstream.append("00000000");
@@ -1142,21 +1147,31 @@ public class Assemble {
 		
 			StringBuilder bitstream = new StringBuilder();
 			
-			boolean ignoreWhitespace = true;
+			boolean ignoreWhitespace = false;
 			int color = 255;
 			
-			for (int row = 0; row < 64; row++)
+			System.out.println("Initial screen preview: \n");
+			
+			for (int row = 0; row < 64; row++) {
+				
+				boolean newline_pad = false;
+				
 				for (int col = 0; col < 128; col++)
-				{
-					if (col < 16 && row < 17 && row >= 1)
-						ignoreWhitespace = true;
-					int ch = text.read();
-					while (ignoreWhitespace && Character.isWhitespace(ch))
-						ch = text.read();
-					ignoreWhitespace = Character.isWhitespace(ch);
-	
-					if (col < 16 && row < 17 && row >= 1)
-						color = col + (row-1)*16;
+				{					
+					int character;
+					
+					// pad rest of the line with spaces if a newline was encountered
+					if (newline_pad)
+						character = 32;
+					else {
+						character = text.read();
+						if (character == 10 || (character >= 32 && character <= 255))
+							System.out.print((char) character);
+					}
+					
+					// if char is a newline, pad the rest of the line with spaces
+					if (character == 10)
+						newline_pad = true;
 					
 					// blink
 					bitstream.append(0); 
@@ -1171,8 +1186,11 @@ public class Assemble {
 					bitstream.append(1);
 
 					for (int b = 7; b >= 0; b--)
-						bitstream.append((ch >> b) & 1);				
+						bitstream.append((character >> b) & 1);
+					
+					
 				}
+			}
 			
 			String s = bitstream.toString();
 			
@@ -1180,6 +1198,8 @@ public class Assemble {
 			{
 				screenMem.add(s.substring(i*16, (i+1)*16));
 			}
+			
+			System.out.println();
 		
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();

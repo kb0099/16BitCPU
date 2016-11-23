@@ -1,0 +1,15 @@
+<?xml version="1.0" ?>
+<!-- Configuration of the Ant build system to generate a Jar file --> 
+<project name="TestMain" default="CreateJar">
+	
+	<target name="CreateManifest">
+	    <manifest file="bin/MANIFEST.MF">
+	        <attribute name="Manifest-Version" value="1.0" />
+	        <attribute name="Main-Class" value="assem.Assemble" />
+	    </manifest>
+	</target>
+	
+  <target name="CreateJar" description="Create Jar file">
+        <jar jarfile="Assemble.jar" manifest="bin/MANIFEST.MF" basedir="bin" />
+  </target>
+</project>
