@@ -5,12 +5,248 @@
 .glyph_init: ascii_8x8_ext.png # 256x4 = 1024
 
 .data
-			title: 0x0
-			menu_itm1: 0x0
-			menu_itm2: 0x0
-			menu_itm3: 0x0
+			title: 		 .const 0xc1f	# title + 1*0x200 = menu_itm1, +2*0x200 = menu_itm2, etc.
+			divider:   .const 0xf13 # divider + 1*0x200 = divider2, etc.
+			menu_title:     	 "      Menu"
+			info_text: 				 "      Info"
+			current_cond_text: "Current Conditions"
+			hist_report_text:  "Historical Report"
+			game_text: 				 "      Game?"
+			temperature_text:	 "Temperature: 34°F"
+			humidity_text:     "Humidity: 75%"
+			info1_text:        "Weather Station by"
+			info2_text:        "E Oguz, T Dorney,"
+			info3_text:        "K Bastakoti, &"
+			info4_text:        "A Payne"
+			menu_itm_text_len: .const 18
+			menu_text_offset:  .const 494 # offset between menu text (last char to first char)
+			menu_text_off_strt: .const 512 # (first char to first char)
+			menu_itm_blank:    " "
+			blank_divider_r:   "´" # right divider character, vertical bar
+			blank_divider_l:	 "¸" # left divider character, vertical bar
+			blank_divider_c:   " " # center divider character, space
+			line_divider_r:    "º" # right divider character, vertical bar w/ horizontal bar
+			line_divider_l:    "¹" # left divider character, vertical bar w/ horizontal bar
+			line_divider_c:    "»" # center divider character, horizontal bar
+			divider_c_num:     .const 39  # number of center divider characters to draw
+			divider_offset:    .const 472 # offset between dividers (last char to first char)
+			blk_bg_white_fg:   .const 0x0F00
+			blk_bg_h_red_fg:   .const 0x0C00
+			blk_bg_h_blu_fg:   .const 0x0900
+			blk_bg_h_grn_fg:   .const 0x0A00
+			blk_bg_h_ylw_fg:   .const 0x0E00
+			blk_bg_h_cyn_fg:   .const 0x0B00
 
 .teak # beginning of assembly code
 
 # main program entry point
-hold: jl hold
+main:		li 		$sp, 20479 # initialize stack pointer address
+				li 		$r1, 65000 # outer loop limit, 65000*150 ~= 1 sec wait
+				li 		$r2, 300 # inner loop limit
+				jal   wait # wait 1 sec, per arguments above
+				
+				li    $r1, menu_text_offset # menu_text_offset
+				li    $r2, title # starting with title
+				li    $r3, 5 # clear 5 menu items
+				jal 	clr_menu_text
+				
+				li    $r1, divider_offset
+				li    $r2, divider
+				li    $r3, 3 # clear 3 dividers
+				li    $r8, blank_divider_l
+				li    $r9, blank_divider_c
+				li    $r10, blank_divider_r
+				push  $r8
+				push  $r9
+				push  $r10
+				jal 	draw_dividers
+				
+				jal   draw_info
+				
+				li 		$r1, 65000 # outer loop limit, 65000*150 ~= 1 sec wait
+				li 		$r2, 300 # inner loop limit
+				jal   wait # wait 1 sec, per arguments above
+				
+				li    $r1, menu_text_offset # menu_text_offset
+				li    $r2, title # starting with title
+				li    $r3, 5 # clear 5 menu items
+				jal 	clr_menu_text
+				
+				li    $r1, divider_offset
+				li    $r2, divider
+				li    $r3, 3 # draw 3 dividers
+				li    $r8, line_divider_l
+				li    $r9, line_divider_c
+				li    $r10, line_divider_r
+				push  $r8
+				push  $r9
+				push  $r10
+				jal 	draw_dividers
+				
+				jal draw_menu
+				
+hold:   jl main
+
+draw_menu: li $r4, blk_bg_white_fg
+				li    $r5, title
+				li    $r6, menu_text_off_strt
+				li    $r7, 0 # counter
+				li    $r9, menu_title
+				push  $ra
+				
+menu_loop: mov $r1, $r9 # pass text to print
+				mov   $r2, $r5 # pass position to print to
+				mov 	$r3, $r4 # pass style (black bg, white fg)
+				jal 	prnt
+				add   $r5, $r6 # increment position
+				addi  $r7, 1   # increment counter
+				
+        bnei  $r7, 1, menu2
+				li $r9, info_text
+				jl menu_loop
+menu2:	bnei  $r7, 2, menu3
+				li $r9, current_cond_text
+				jl menu_loop			
+menu3:	bnei  $r7, 3, menu4
+				li $r9, hist_report_text
+				jl menu_loop
+menu4:	bnei  $r7, 4, menu_done
+				li $r9, game_text
+				jl menu_loop				
+				
+menu_done: pop $ra
+				jr $ra
+				
+				
+draw_info: li    $r4, blk_bg_h_red_fg
+				li    $r5, title
+				li    $r6, menu_text_off_strt
+				li    $r7, 0 # counter
+				li    $r9, info_text
+				push  $ra
+				
+				# print info title
+info_loop: mov $r1, $r9 # pass text to print
+				mov   $r2, $r5 # pass position to print to
+				mov 	$r3, $r4 # pass style (black bg, white fg)
+				jal 	prnt
+				add   $r5, $r6 # increment position
+				addi  $r7, 1   # increment counter
+				
+        bnei  $r7, 1, info2
+				li $r4, blk_bg_h_blu_fg
+				li $r9, info1_text
+				jl info_loop
+info2:	bnei  $r7, 2, info3
+				li $r4, blk_bg_h_grn_fg
+				li $r9, info2_text
+				jl info_loop			
+info3:	bnei  $r7, 3, info4
+				li $r4, blk_bg_h_ylw_fg
+				li $r9, info3_text
+				jl info_loop
+info4:	bnei  $r7, 4, info_done
+				li $r4, blk_bg_h_cyn_fg
+				li $r9, info4_text
+				jl info_loop				
+				
+info_done: pop $ra
+				jr $ra
+
+
+# waits the specified time where $r1 is the outer loop max value and $r2 is the inner loop max value
+wait:   li    $r9, 0 # inner loop counter
+oreset:	li    $r8, 0 # outer loop counter
+oloop:	addi  $r8, 1
+				beq  $r8, $r1, iloop # if $r8 == $r1 then increment inner loop
+				jl    oloop # loop
+
+
+iloop:	addi  $r9, 1
+				beq  $r9, $r2, wait_done
+				jl    oreset
+wait_done: jr $ra
+
+
+# takes pointer to first menu item ($r2), offset between menu items ($r1),
+# and number of menu items to clear ($r3) and clears it with menu_itm_text_len 
+# of menu_itm_blank's
+clr_menu_text: li $r6, 0
+							 mov $r4, $r1 # offset
+							 mov $r5, $r3 # menu items to clear
+clr_menu_loop: blt $r6, $r5, clr_menu_item
+							 jr $ra
+clr_menu_item: li $r1, menu_itm_blank
+							 read $r1, $r1, 0 # get char
+							 li $r3, menu_itm_text_len # const
+							 push $ra # store $ra on stack
+							 jal prnt_n_chars
+							 pop $ra # restore $ra off stack
+							 add $r2, $r4
+							 addi $r6, 1
+							 jl clr_menu_loop
+
+
+# takes pointer to first divider ($r2), offset between dividers ($r1), 
+# and number of dividers to draw ($r3) and draws left ($sp+2), center ($sp+1)
+# and right ($sp) dividers
+draw_dividers: mov  $r4, $r1 # save args, $r4 = offset between dividers
+							mov   $r5, $r3 # $r5 = number of dividers to draw
+							pop   $r6 # right divider
+							pop   $r7 # center divider
+							pop   $r8 # left divider
+draw_div_loop: bnei  $r5, 0, draw_div
+							jr    $ra
+draw_div:     read  $r9, $r8, 0
+							write $r9, $r2, 0
+							addi  $r2, 1 # increment vga screen pointer + 1
+							read  $r1, $r7, 0
+							li    $r3, divider_c_num # num of chars to print
+							push  $ra
+							push  $r8
+							jal   prnt_n_chars
+							pop   $r8
+							pop   $ra
+							read  $r9, $r6, 0
+							write $r9, $r2, 0
+							add   $r2, $r4 # move vga pointer to next divider
+							subi  $r5, 1 # decrement dividers drawn so far
+							jl    draw_div_loop
+
+
+# prints the specified char ($r1) n times ($r3) to the vga screen 
+# starting at the position pointed to by $r2
+# arguments
+#			$r1 char to print
+#			$r2 vga screen position to print char
+#			$r3 number of chars to print in a row
+# return void
+prnt_n_chars:	bnei  $r3, 0, prnt_char
+							jr    $ra
+prnt_char:    write $r1, $r2, 0
+							subi  $r3, 1 # decrement chars to print
+							addi  $r2, 1 # print to the next location
+							jl    prnt_n_chars
+
+# prints string pointed to at $r1 to vga screen at location $r2
+# with style $r3. Strings should be null terminated to prevent printing forever!
+prnt:			 read  $r10, $r1, 0 	# get char
+					 beqi  $r10, 0, prnt_done # if char is null pointer, finish
+					 li    $r11, 0x00FF
+					 and   $r10, $r11     # clear previous style
+					 or    $r10, $r3		  # apply new style 
+					 write $r10, $r2, 0 	# write char to screen
+					 addi  $r1, 1 				# increment pointer address
+					 addi  $r2, 1 				# increment vga location
+					 jl    prnt
+prnt_done: jr 	 $ra
+
+
+# makes a char style given a blink ($r1), bg color ($r2), and fg color ($r3)
+make_style: slli $r1, 3
+						or   $r1, $r2  # combine blink with bg color
+						slli $r1, 4
+						or	 $r1, $r3  # combine blink, bg with fg color
+						slli $r1, 8    # shift style to upper bits
+						mov  $ret, $r1 # set return reg
+						jr   $ra

@@ -59,7 +59,7 @@ public class Assemble {
 	private static final String HEX_PREFIX 			= "0x";
 	private static final String REG_PREFIX	    	= "$";
 	private static final String REG_PREFIX_CHAR 	= "r";
-	private static final String REG_PATTERN    		= REG_PREFIX_CHAR + "[0-9]+";
+	private static final String REG_PATTERN    		= REG_PREFIX_CHAR + "?" + "[0-9]+";
 	private static final String ZERO_REG			= "zero";
 	private static final String SP_REG				= "sp";
 	private static final String RET_REG				= "ret";
@@ -202,9 +202,6 @@ public class Assemble {
 				break;
 		}
 		
-		//assemblyFile = "branch-beq.teak";
-		//assemblyFile = "pseudo-test.teak";
-		
 		System.out.format("Assembling '%s' into '%s' (using radix %d) \n", assemblyFile, outputFile, outputRadix);
 		long start = System.currentTimeMillis(); // time execution time and report
 		
@@ -311,8 +308,8 @@ public class Assemble {
 	 * @param line
 	 */
 	private static void parseLine(String line, int lineNumber) {
-		// split by labels (keep : delimiter)
-		ArrayList<String> tokens = new ArrayList<>(Arrays.asList(line.split("(?<=" + LABEL_DELIMITER + ")")));
+		// split by labels (keep : delimiter, but don't split on : inside quoted strings)
+		ArrayList<String> tokens = new ArrayList<>(Arrays.asList(line.split("(?<=" + LABEL_DELIMITER + "(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)" +")")));
 		
 		List<String> lineList = new ArrayList<>(); // list of parameters on line
 		lineList.add(String.format("%d", lineNumber));
@@ -363,7 +360,7 @@ public class Assemble {
 				}
 			}
 			
-			// if instruction is a psuedo instruction, replace with corresponding instruction(s) and
+			// if instruction is a pseudo instruction, replace with corresponding instruction(s) and
 			// don't add line to lies (it will be added in the expandPsuedoInstructions method)
 			if (PseudoInstructions.containsKey(lineList.get(FUNCTION_POSITION))) {
 				addLine = expandPsuedoInstruction(lineList, lineNumber);
@@ -378,7 +375,7 @@ public class Assemble {
 	
 	/**
 	 * Parses .data global section for string variables and maps them to a memory address
-	 * @param lineList to find gloab variable in (will be one line)
+	 * @param lineList to find global variable in (will be one line)
 	 */
 	private static void processGlobalVar(List<String> lineList) {
 		
@@ -386,7 +383,7 @@ public class Assemble {
 			globals.put(lineList.get(LABEL_POSITION), globalPointer);
 			String str = lineList.get(FUNCTION_POSITION).replaceAll("\"", "");
 			for (Character c : str.toCharArray()) {
-				dataMem.add(convertImmToBinary((int) c, 16));
+				dataMem.add(convertImmToBinary((0x0f00 | (int) c), 16)); // default style: black bg, white fg
 				globalPointer++;
 			}
 			dataMem.add(convertImmToBinary(0, 16)); // null terminator
@@ -400,7 +397,12 @@ public class Assemble {
 				dataMem.add(convertImmToBinary(0, 16));
 				globalPointer++;
 			}
-		} 
+		}
+		else if (lineList.get(FUNCTION_POSITION).startsWith(".const")) { // .const command, don't store in memory just ref value
+			String valStr = lineList.get(FUNCTION_POSITION).replaceAll(".const", "").trim(); // get size
+			int val = parseImmediate(valStr);
+			globals.put(lineList.get(LABEL_POSITION), val);
+		}
 		else if (lineList.get(FUNCTION_POSITION).matches("^\\{.*\\}$")) { // array of values
 			globals.put(lineList.get(LABEL_POSITION), globalPointer);
 			String str = lineList.get(FUNCTION_POSITION).replaceAll("\\{", "").replaceAll("\\}", "");
@@ -502,7 +504,7 @@ public class Assemble {
 				
 				// compare
 				third.add(String.format("%d", lineNumber));
-				third.add(label);
+				third.add("");
 				third.add("compi");
 				third.add(intermediateReg);
 				third.add(sImm);
@@ -1265,10 +1267,21 @@ public class Assemble {
 			register = register.replace(REG_PREFIX, ""); // remove $
 		}
 		
-		
+		// named constructs
 		switch (register) {
 			case "0":
 			case ZERO_REG:	return 0;
+			case "a0":	 	return 1;
+			case "a1":	 	return 2;
+			case "a2":	 	return 3;
+			case "s0":	 	return 4;
+			case "s1":	 	return 5;
+			case "s2":	 	return 6;
+			case "s3":		return 7;
+			case "t0":		return 8;
+			case "t1":		return 9;
+			case "t2":		return 10;
+			case "t3":		return 11;
 			case RET_REG:	return 12;
 			case SP_REG:	return 13;
 			case RA_REG:	return 14;
@@ -1277,14 +1290,15 @@ public class Assemble {
 		
 		if (!register.matches(REG_PATTERN)) {
 			throw new IllegalArgumentException("Register names must be either a "
-					+ "special register name: zero, ret, sp, ra or of the form " + REG_PATTERN);
+					+ "register name: zero, ret, sp, ra, a[0-2], s[0-3], t[0-3] or of the form " + REG_PATTERN);
 		}
 		else {
 			register = register.replace(REG_PREFIX_CHAR, ""); // remove r
 			byte number = Byte.parseByte(register); // all that's left is the number
-			if (number > 11) {
+			if (number > 15) {
 				throw new IllegalArgumentException("There are only 16 registers including: zero, "
-						+ "ret, sp, ra and registers 1-11");
+						+ "ret, sp, ra and registers 1-11. Reference them using the name ($r1, $r2, $at, etc.) "
+						+ "or the register number ($1, $2, $3, etc.)");
 			}
 			else {
 				return number;
