@@ -7,13 +7,24 @@
 .data
 			title: 		 .const 0xc1f	# title + 1*0x200 = menu_itm1, +2*0x200 = menu_itm2, etc.
 			divider:   .const 0xf13 # divider + 1*0x200 = divider2, etc.
+			cursor: 	 0xe1f # starts at first menu item
+			screen:    0 # 0 = menu, 1 = info, 2 = current cond, 3 = historical report, 4 = game?
+			hours:     0 # for global clock, min 1, max 12
+			minutes:   0 # for global clock, min 0, max 59
+			seconds:   0 # for global clock, min 0, max 59
+			temperature: 0
+			str_temperature: .size 4
+			ptr_temperature: 0x0
+			humidity:  0
+			str_humidity: .size 4
+			ptr_humidity: 0x0
 			menu_title:     	 "      Menu"
 			info_text: 				 "      Info"
 			current_cond_text: "Current Conditions"
 			hist_report_text:  "Historical Report"
 			game_text: 				 "      Game?"
-			temperature_text:	 "Temperature: 34°F"
-			humidity_text:     "Humidity: 75%"
+			temperature_text:	 "Temperature:  34°F"
+			humidity_text:     "Humidity:     75 %"
 			info1_text:        "Weather Station by"
 			info2_text:        "E Oguz, T Dorney,"
 			info3_text:        "K Bastakoti, &"
@@ -21,7 +32,7 @@
 			menu_itm_text_len: .const 18
 			menu_text_offset:  .const 494 # offset between menu text (last char to first char)
 			menu_text_off_strt: .const 512 # (first char to first char)
-			menu_itm_blank:    " "
+			menu_itm_blank:    .const 0x20 # space
 			blank_divider_r:   "´" # right divider character, vertical bar
 			blank_divider_l:	 "¸" # left divider character, vertical bar
 			blank_divider_c:   " " # center divider character, space
@@ -41,6 +52,13 @@
 
 # main program entry point
 main:		li 		$sp, 20479 # initialize stack pointer address
+
+				li    $a0, cursor
+				read  $a0, $a0, 0 # get vga_addr
+				li    $a1, menu_itm_text_len
+				li    $a2, blk_bg_h_red_fg
+				jal   style_n_chars # color cursor
+				
 				li 		$a0, 65000 # outer loop limit, 65000*150 ~= 1 sec wait
 				li 		$a1, 300 # inner loop limit
 				jal   wait # wait 1 sec, per arguments above
@@ -78,7 +96,7 @@ main:		li 		$sp, 20479 # initialize stack pointer address
 				li    $t0, line_divider_l
 				li    $t1, line_divider_c
 				li    $t2, line_divider_r
-				push  $t0
+				push  $t0 # extra args go on stack
 				push  $t1
 				push  $t2
 				jal 	draw_dividers
@@ -87,6 +105,12 @@ main:		li 		$sp, 20479 # initialize stack pointer address
 				
 hold:   jl main
 
+
+# draw_menu
+# draws the first menu screen
+# arguments
+#			none
+# returns void
 draw_menu: li $s0, blk_bg_white_fg
 				li    $s1, title
 				li    $s2, menu_text_off_strt
@@ -114,10 +138,18 @@ menu4:	bnei  $s3, 4, menu_done
 				li $t1, game_text
 				jl menu_loop				
 				
-menu_done: pop $ra
+menu_done: li $t0, screen # address of screen counter
+				li $t1, 0
+				write $t1, $t0, 0 # set screen counter to 0
+				pop $ra
 				jr $ra
-				
-				
+
+
+# draw_info
+# draws the info screen
+# arguments
+#			none
+# returns void
 draw_info: li    $s0, blk_bg_h_red_fg
 				li    $s1, title
 				li    $s2, menu_text_off_strt
@@ -150,11 +182,20 @@ info4:	bnei  $s3, 4, info_done
 				li $t1, info4_text
 				jl info_loop				
 				
-info_done: pop $ra
+info_done: li $t0, screen # address of screen counter
+				li $t1, 1
+				write $t1, $t0, 1 # set screen counter to 0
+				pop $ra
 				jr $ra
 
 
-# waits the specified time where $a0 is the outer loop max value and $a1 is the inner loop max value
+# wait
+# waits the specified time where $a0 is the outer loop max value 
+# and $a1 is the inner loop max value
+# arguments
+#			$a0 inner loop max value
+#			#a1 outer loop max value
+# returns void
 wait:   li    $t1, 0 # inner loop counter
 oreset:	li    $t0, 0 # outer loop counter
 oloop:	addi  $t0, 1
@@ -168,16 +209,21 @@ iloop:	addi  $t1, 1
 wait_done: jr $ra
 
 
+# clr_menu_text: clear menu text
 # takes pointer to first menu item ($a1), offset between menu items ($a0),
 # and number of menu items to clear ($a2) and clears it with menu_itm_text_len 
 # of menu_itm_blank's
+# arguments
+#			$a0 offset between menu items (last char to first char)
+#			$a1 first menu item to clear
+#			$a2 number of menu items to clear
+# returns void
 clr_menu_text: li $s2, 0
 							 mov $s0, $a0 # offset
 							 mov $s1, $a2 # menu items to clear
 clr_menu_loop: blt $s2, $s1, clr_menu_item
 							 jr $ra
 clr_menu_item: li $a0, menu_itm_blank
-							 read $a0, $a0, 0 # get char
 							 li $a2, menu_itm_text_len # const
 							 push $ra # store $ra on stack
 							 jal prnt_n_chars
@@ -187,9 +233,18 @@ clr_menu_item: li $a0, menu_itm_blank
 							 jl clr_menu_loop
 
 
+# draw_dividers
 # takes pointer to first divider ($a1), offset between dividers ($a0), 
 # and number of dividers to draw ($a2) and draws left ($sp+2), center ($sp+1)
 # and right ($sp) dividers
+# arguments
+#			$a0   offset between dividers (last char to first char)
+#			$a1   pointer to first dividers
+#			$a2   number of dividers to draw
+#			$sp   pointer to right divider character
+#			$sp+1 pointer to center divider character
+#			$sp+2 pointer to left divider character
+# returns void
 draw_dividers: mov  $s0, $a0 # save args, $s0 = offset between dividers
 							mov   $s1, $a2 # $s1 = number of dividers to draw
 							pop   $s2 # right divider
@@ -198,7 +253,7 @@ draw_dividers: mov  $s0, $a0 # save args, $s0 = offset between dividers
 draw_div_loop: bnei  $s1, 0, draw_div
 							jr    $ra
 draw_div:     read  $t1, $t0, 0
-							write $t1, $a1, 0
+							write $t1, $a1, 0 # draw left divider
 							addi  $a1, 1 # increment vga screen pointer + 1
 							read  $a0, $s3, 0
 							li    $a2, divider_c_num # num of chars to print
@@ -214,13 +269,14 @@ draw_div:     read  $t1, $t0, 0
 							jl    draw_div_loop
 
 
+# prnt_n_chars: print n characters
 # prints the specified char ($a0) n times ($a2) to the vga screen 
 # starting at the position pointed to by $a1
 # arguments
 #			$a0 char to print
 #			$a1 vga screen position to print char
 #			$a2 number of chars to print in a row
-# return void
+# returns void
 prnt_n_chars:	bnei  $a2, 0, prnt_char
 							jr    $ra
 prnt_char:    write $a0, $a1, 0
@@ -228,8 +284,15 @@ prnt_char:    write $a0, $a1, 0
 							addi  $a1, 1 # print to the next location
 							jl    prnt_n_chars
 
+
+# prnt: print
 # prints string pointed to at $a0 to vga screen at location $a1
 # with style $a2. Strings should be null terminated to prevent printing forever!
+# arguments
+#			$a0 string to print (pointer to first char)
+#			$a1 vga screen location to print to
+#			$a2 style to apply to string
+# returns void
 prnt:			 read  $t2, $a0, 0 	# get char
 					 beqi  $t2, 0, prnt_done # if char is null pointer, finish
 					 li    $t3, 0x00FF
@@ -242,7 +305,31 @@ prnt:			 read  $t2, $a0, 0 	# get char
 prnt_done: jr 	 $ra
 
 
+# style_n_chars: style n characters
+# applys the style provided in $a2 to the string pointed to by $a0
+# for the number of characters specified in $a1
+# arguments
+#			$a0 pointer to first char to which to apply style
+#			$a1 number of characters to style
+#			$a2 style to apply
+# returns void
+style_n_chars: beqi $a1, 0, style_done
+					 read  $t0, $a0, 0 # get char
+					 or    $t0, $a2 # apply style
+					 write $t0, $a0, 0 # write char to screen
+					 subi  $a1, 1 # subtract num of chars to style
+					 addi  $a0, 1 # increment to next char
+					 jl    style_n_chars
+style_done: jr   $ra
+
+
+# make_style
 # makes a char style given a blink ($a0), bg color ($a1), and fg color ($a2)
+# arguments
+#			$a0 blink (0 = no blink, 1 = blink)
+#			$a1 background color (3 bit)
+#     $a2 foreground color (4 bit)
+# returns style (upper 8 bits of $ret set per $a0, $a1, $a2)
 make_style: slli $a0, 3
 						or   $a0, $a1  # combine blink with bg color
 						slli $a0, 4
@@ -250,3 +337,58 @@ make_style: slli $a0, 3
 						slli $a0, 8    # shift style to upper bits
 						mov  $ret, $a0 # set return reg
 						jr   $ra
+								
+						
+# itos: integer to string
+# converts an integer value ($a0) into a string, pointed at by $a1
+# arguments. Note that the max value that can be converted is (2^15)-1
+#			$a0 integer to convert into a string
+#			$a1 pointer to string to store converted integer
+# returns void						
+itos:	li   $t2, 10000 # $t2 = decimal position current converting
+			li   $t0, 1 # assume leading zero to begin with
+			li 	 $t1, 0 # control variable
+itos_loop: li   $ret, 0 # zero out $ret
+
+chk_pos: comp  $a0,  $t2 # $a0 - $t2, $a0 <=? $t2
+			jlt  chk_done # use comp then jlt because in most cases will keep subtracted value
+			addi 	$ret, 1
+			jl 		chk_pos
+
+chk_done: add 	$a0, $t2 # restore $a0
+			beqi  $t0, 0, store # check if base 10 position is leading zero and don't store if it is
+			beqi  $ret, 0, dont_store
+			li    $t0, 0
+store: addi  $ret, 48   # get ascii code
+			write $ret, $a1, 0  # store ascii code into number address
+			addi 	$a1, 1	# increment mem address
+dont_store:	addi  $t1, 1
+
+# case structure to determine decimal position to work on
+   			 bnei $t1, 1, set_100 
+			   li $t2, 1000
+			   jl itos_loop
+set_100: bnei $t1, 2, set_10
+			   li $t2, 100
+			   jl itos_loop
+set_10:	 bnei $t1, 3, set_1
+				 li $t2, 10
+			 	 jl itos_loop
+set_1:   bnei $t1, 4, itos_done
+				 li $t2, 1
+			   jl itos_loop 
+
+itos_done: jr $ra
+
+
+# ctof: celcius to farenheit
+# converts the given celcius value ($a0) into farenheit. Approximate value returned,
+# because floating point multiplication is unsupported. Instead a bit shift
+# by 1 (*2) is used.
+# arguments
+#			$a0 celcius value to converts
+# returns farenheit value
+ctof: slli $a0, 1
+			addi $a0, 32
+			mov  $ret, $a0
+			jr   $ra
