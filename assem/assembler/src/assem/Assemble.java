@@ -113,13 +113,17 @@ public class Assemble {
 		
 		// mType instructions
 		InstructionOpCodes.put("read",  new Integer[] {MTYPE_OPCODE, 0});
+		InstructionOpCodes.put("lw",    new Integer[] {MTYPE_OPCODE, 0});
 		InstructionOpCodes.put("write", new Integer[] {MTYPE_OPCODE, 1});
+		InstructionOpCodes.put("sw",    new Integer[] {MTYPE_OPCODE, 1});
 		
 		// jType instructions
 		InstructionOpCodes.put("jl",    new Integer[] {JTYPE_OPCODE, 0});
+		InstructionOpCodes.put("j",     new Integer[] {JTYPE_OPCODE, 0});
 		InstructionOpCodes.put("jeq",   new Integer[] {JTYPE_OPCODE, 1});
 		InstructionOpCodes.put("jne",   new Integer[] {JTYPE_OPCODE, 2});
 		InstructionOpCodes.put("jal",   new Integer[] {JTYPE_OPCODE, 3});
+		InstructionOpCodes.put("call",  new Integer[] {JTYPE_OPCODE, 3});
 		InstructionOpCodes.put("jr",    new Integer[] {JTYPE_OPCODE, 4});
 		InstructionOpCodes.put("jlt",   new Integer[] {JTYPE_OPCODE, 5});
 		InstructionOpCodes.put("jleq",  new Integer[] {JTYPE_OPCODE, 6});
@@ -155,6 +159,7 @@ public class Assemble {
 	private static List<String> glyphMem = new ArrayList<>(); // list of final bits to output
 	private static List<String> textMem = new ArrayList<>(); // list of final bits to output
 	private static List<String> dataMem = new ArrayList<>(); // list of final bits to output
+	private static int dataMemSize = 0;
 	private static Map<String, Integer> labels = new HashMap<>(); // labels mapped to line address
 	private static Map<String, Integer> globals = new HashMap<>(); // globals mapped to memory address
 	private static boolean processingDataSection = false;
@@ -237,7 +242,7 @@ public class Assemble {
 			}
 			
 			if (globals.size() != 0) { // prints out global variables
-				System.out.format("Global variables found: %d\n", globals.size());
+				System.out.format("Global variables found: %d, Used Data Memory: %d/%d\n", globals.size(), dataMemSize, DATA_MEM_SIZE);
 				System.out.println(repeated);
 				System.out.format("%-20s %-20s\n", "Variable", "Mem Addr");
 				System.out.println(repeated);
@@ -1025,6 +1030,7 @@ public class Assemble {
 			zeroPad(textMem, TEXT_MEM_SIZE);
 			output.addAll(textMem);
 			
+			dataMemSize = dataMem.size();
 			zeroPad(dataMem, DATA_MEM_SIZE);
 			output.addAll(dataMem);
 			
