@@ -362,8 +362,8 @@ public class Assemble {
 			for (String a : args) {
 				if (!a.isEmpty()) {
 					// if token is a global label, replace with memory address
-					if (globals.containsKey(a)) {
-						a = String.format("%d", globals.get(a));
+					if (globals.containsKey(a.toLowerCase())) {
+						a = String.format("%d", globals.get(a.toLowerCase()));
 					}
 					lineList.add(clean(a.toLowerCase())); // add all parameters
 				}
