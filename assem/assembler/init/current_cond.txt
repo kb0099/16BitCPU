@@ -9,11 +9,11 @@
 ¸                                       ´
 ¸                                       ´
 ¸                                       ´
-¸           Temperature: 32°F           ´
+¸           Temperature: 32 °F          ´
 ¸                                       ´
 ¸                                       ´
 ¸                                       ´
-¸           Humidity: 68%               ´
+¸           Humidity:    68  %          ´
 ¸                                       ´
 ¸                                       ´
 ¸                                       ´

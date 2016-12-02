@@ -5,86 +5,117 @@
 .glyph_init: ascii_8x8_ext.png # 256x4 = 1024
 
 .data 
-			sp_start:  .const 0x4fff
-			title: 		 .const 0xc1f	# title + 1*0x200 = menu_itm1, +2*0x200 = menu_itm2, etc.
-			divider:   .const 0xf13 # divider + 1*0x200 = divider2, etc.
-			cursor_start: .const 0xe1f # starts at first menu item
+			SP_START:  .const 0x4fff
+			TITLE: 		 .const 0xc1f	# TITLE + 1*0x200 = menu_itm1, +2*0x200 = menu_itm2, etc.
+			DIVIDER:   .const 0xf13 # DIVIDER + 1*0x200 = DIVIDER2, etc.
+			CURSOR_START: .const 0xe1f # starts at first menu item
 			cursor_pos:  0 # 0 = item0, 1 = item1, 2 = item2, 3 = item3
 			screen:      0 # 0 = menu, 1 = info, 2 = current cond, 3 = historical report, 4 = game?
 			hours:       0 # for global clock, min 1, max 12
 			minutes:     0 # for global clock, min 0, max 59
 			seconds:     0 # for global clock, min 0, max 59
-			temperature: 0
-			str_temperature: .size 4
-			ptr_temperature: 0x0
-			humidity:    0
-			str_humidity: .size 4
-			ptr_humidity: 0x0
-			hist_data: {22, 23, 24, 20, 18, 20, 25, 27, 29, 30} # static data for now, size will eventually equal 39 (0-38)
+			temperature: 48
+			str_temperature: "34 °F" # space for temp, degree symbol, temp unit and null terminator
+			PTR_TEMPERATURE: .const 0x102c
+			humidity:    63
+			str_humidity:    "75  %" # space for 
+			PTR_HUMIDITY: .const 0x122c
+			hist_data: {22, 23, 24, 20, 18, 20, 25, 27, 29, 30, 31} # static data for now, size will eventually equal 11
 			graph_pointer: 0x0
-			btn_sw_ptr:    .const 0x4c00
-			btn_up_mask:   .const 0x0001 #  1 = 0..0000 0001
-			btn_rght_mask: .const 0x0002 #  2 = 0..0000 0010
-			btn_dwn_mask:  .const 0x0004 #  4 = 0..0000 0100
-			btn_lft_mask:  .const 0x0008 #  8 = 0..0000 1000
-			btn_cntr_mask: .const 0x0010 # 16 = 0..0001 0000
-			menu_title:     	 "      Menu"
+			BTN_SW_PTR:    .const 0x4c00
+			BTN_UP_MASK:   .const 0x0001 #  1 = 0..0000 0001
+			BTN_RGHT_MASK: .const 0x0002 #  2 = 0..0000 0010
+			BTN_DWN_MASK:  .const 0x0004 #  4 = 0..0000 0100
+			BTN_LFT_MASK:  .const 0x0008 #  8 = 0..0000 1000
+			BTN_CNTR_MASK: .const 0x0010 # 16 = 0..0001 0000
+			menu_TITLE:     	 "      Menu"
 			info_text: 				 "      Info"
 			current_cond_text: "Current Conditions"
 			hist_report_text:  "Historical Report"
 			game_text: 				 "      Game?"
-			temperature_text:	 "Temperature:  34°F"
-			humidity_text:     "Humidity:     75 %"
+			temperature_text:	 "Temperature:"
+			humidity_text:     "Humidity:"
 			info1_text:        "Weather Station by"
 			info2_text:        "E Oguz, T Dorney,"
 			info3_text:        "K Bastakoti, &"
 			info4_text:        "A Payne"
-			menu_itm_text_len: .const 18
-			menu_text_offset:  .const 494 # offset between menu text (last char to first char)
-			menu_text_off_strt: .const 512 # (first char to first char)
-			menu_itm_blank:    .const 0x20 # space
-			blank_divider_r:   "´" # right divider character, vertical bar
-			blank_divider_l:	 "¸" # left divider character, vertical bar
-			blank_divider_c:   " " # center divider character, space
-			line_divider_r:    "º" # right divider character, vertical bar w/ horizontal bar
-			line_divider_l:    "¹" # left divider character, vertical bar w/ horizontal bar
-			line_divider_c:    "»" # center divider character, horizontal bar
-			divider_c_num:     .const 39  # number of center divider characters to draw
-			divider_offset:    .const 472 # offset between dividers (last char to first char)
-			blk_bg_white_fg:   .const 0x0F00
-			blk_bg_h_red_fg:   .const 0x0C00
-			blk_bg_h_blu_fg:   .const 0x0900
-			blk_bg_h_grn_fg:   .const 0x0A00
-			blk_bg_h_ylw_fg:   .const 0x0E00
-			blk_bg_h_cyn_fg:   .const 0x0B00
+			MENU_ITM_TXT_LEN: .const 18
+			MENU_TXT_OFFSET:  .const 494 # offset between menu text (last char to first char)
+			MENU_TXT_OFF_STRT: .const 512 # (first char to first char)
+			MENU_ITM_BLANK:    .const 0x20 # space
+			blank_DIVIDER_r:   "´" # right DIVIDER character, vertical bar
+			blank_DIVIDER_l:	 "¸" # left DIVIDER character, vertical bar
+			blank_DIVIDER_c:   " " # center DIVIDER character, space
+			line_DIVIDER_r:    "º" # right DIVIDER character, vertical bar w/ horizontal bar
+			line_DIVIDER_l:    "¹" # left DIVIDER character, vertical bar w/ horizontal bar
+			line_DIVIDER_c:    "»" # center DIVIDER character, horizontal bar
+			DIVIDER_C_NUM:     .const 39  # number of center DIVIDER characters to draw
+			DIVIDER_OFFSET:    .const 472 # offset between DIVIDERs (last char to first char)
+			BLK_BG_WHITE_FG:   .const 0x0F00
+			BLK_BG_H_RED_FG:   .const 0x0C00
+			BLK_BG_H_BLU_FG:   .const 0x0900
+			BLK_BG_H_GRN_FG:   .const 0x0A00
+			BLK_BG_H_YLW_FG:   .const 0x0E00
+			BLK_BG_H_CYN_FG:   .const 0x0B00
 
 .teak # beginning of assembly code
 
 # main program entry point
 main:		jal initialize
 
-				li    $a0, blk_bg_h_red_fg
+				li    $a0, BLK_BG_H_RED_FG
 				jal   sh_cursor
 				
-				jal   wait1sec # wait 1 sec
-				jal   draw_info
-				jal   wait1sec # wait 1 sec
-				jal   draw_menu
-				jal   wait1sec # wait 1 sec
+				# press down button
+				jal   wait1sec 
+				li    $a0, BTN_DWN_MASK
+				jal   press_btn
 				
-				li $a0, 1 # decrement cursor
-				jal mov_cursor
+				jal   chk_scrn
 				
-				jal   wait1sec # wait 1 sec
-				jal   draw_cond
-				jal   wait1sec # wait 1 sec
-				jal   draw_menu
-				jal   wait1sec # wait 1 sec
+				# press center button
+				jal   wait1sec 
+				li    $a0, BTN_CNTR_MASK
+				jal   press_btn
+				jal   wait1sec
 				
-				li $a0, 0 # cursor up
-				jal mov_cursor
+				jal   chk_scrn
+				
+				# press back button
+				jal   wait1sec 
+				li    $a0, BTN_LFT_MASK
+				jal   press_btn
+				
+				jal   chk_scrn
+				
+				# press up button
+				jal   wait1sec 
+				li    $a0, BTN_UP_MASK
+				jal   press_btn
+				
+				jal   chk_scrn
+				
+				# press center button
+				jal   wait1sec 
+				li    $a0, BTN_CNTR_MASK
+				jal   press_btn
+				
+				jal   chk_scrn
+				
+				# press back button
+				jal   wait1sec 
+				li    $a0, BTN_LFT_MASK
+				jal   press_btn
+				
+				jal   chk_scrn				
 				
 while:  jl main
+
+
+# simulate btn presses. $a0 is the button to press (use mask)
+press_btn: li $t0, BTN_SW_PTR
+					 write $a0, $t0, 0
+					 jr $ra
 
 
 # explicitly clears all registers and sets $sp. Also runs 
@@ -92,7 +123,7 @@ while:  jl main
 # arguments
 #			none
 # returns void
-initialize: li $a0, 0
+initialize: li $a0, TITLE
 						li $a1, 0
 						li $a2, 0
 						li $s0, 0
@@ -103,13 +134,13 @@ initialize: li $a0, 0
 						li $t1, 0
 						li $t2, 0
 						li $t3, 0
-						li $ret, 0
-						li $sp, sp_start # initialize stack pointer address
+						li $ret, TITLE
+						li $sp, SP_START # initialize stack pointer address
 						li $at, 0
 						
 						li $a0, 65000
 init_loop:  beqi $a0, 0, init_done
-						subi $a1, 1
+						subi $a0, 1
 						jl init_loop
 init_done:  li $a0, 0
 						jr $ra
@@ -129,15 +160,51 @@ chk_scrn: 	li   $t0, screen
 						jal  chk_btns_menu
 						jl   chk_scrn_done
 chk_info:	  bnei $t2, 1, chk_cond
-						#jal  chk_btns_info
+						jal  chk_btns_oth
 						jl   chk_scrn_done
-chk_cond:		beqi $t2, 2, chk_hist
-						#jal  chk_btns_cond
+chk_cond:		bnei $t2, 2, chk_hist
+						jal  update_cond
+						jal  chk_btns_oth
 						jl   chk_scrn_done
-chk_hist:	  beqi $t2, 3, chk_scrn_done
-						#jal  chk_btns_hist
+chk_hist:	  bnei $t2, 3, chk_scrn_done
+						jal  chk_btns_oth
 chk_scrn_done:   pop  $ra
 						jr   $ra
+						
+
+# update_cond: update [current] conditions
+# retrieves the current temperature and humidity (integers) and converts
+# both to strings. finally, each is printed to the screen
+# arguments
+#			none
+# returns void						
+update_cond: li $a0, temperature # convert temperature to string
+						 read $a0, $a0, 0
+						 li $a1, str_temperature
+						 push $ra
+						 jal itos
+						 
+						 # convert humidity to string
+						 li $a0, humidity
+						 read $a0, $a0, 0
+						 li $a1, str_humidity
+						 jal itos
+						 
+						 # print temperature
+						 li $a0, str_temperature
+						 li $a1, PTR_TEMPERATURE
+						 li $a2, BLK_BG_WHITE_FG
+						 jal prnt
+						 
+						 # print humidity
+						 li $a0, str_humidity
+						 li $a1, PTR_HUMIDITY
+						 li $a2, BLK_BG_WHITE_FG
+						 jal prnt
+						 
+						 pop $ra
+						 jr $ra
+						 
 						
 
 # chk_btns_menu: check button [states in] menu [screen]
@@ -147,21 +214,21 @@ chk_scrn_done:   pop  $ra
 # arguments
 #			none 
 # returns void					
-chk_btns_menu: li $t0, btn_sw_ptr
+chk_btns_menu: li $t0, BTN_SW_PTR
 						read $t1, $t0, 0 # get current state of btns
 						push $ra
 						
- 						li  $t0, btn_cntr_mask # check center button first
+ 						li  $t0, BTN_CNTR_MASK # check center button first
 	 					mov $t3, $t0 # keep mask around
 						and $t3, $t1 # get state of center btn
 						beq $t3, $t0, btn_c_mon
 						
-						li  $t0, btn_up_mask
+						li  $t0, BTN_UP_MASK
 						mov $t3, $t0 # keep mask around
 						and $t3, $t1 # get state of center btn
 						beq $t3, $t0, btn_up_mon
 						
-						li  $t0, btn_dwn_mask
+						li  $t0, BTN_DWN_MASK
 						mov $t3, $t0 # keep mask around
 						and $t3, $t1 # get state of center btn
 						beq $t3, $t0, btn_dwn_mon
@@ -193,11 +260,11 @@ chk_btns_mdone: pop $ra
 # arguments
 #			none 
 # returns void						
-chk_btns_oth: li $t0, btn_sw_ptr
+chk_btns_oth: li $t0, BTN_SW_PTR
 						read $t1, $t0, 0 # get current state of btns
 						push $ra
 						
- 						li  $t0, btn_lft_mask # check center button first
+ 						li  $t0, BTN_LFT_MASK # check center button first
 	 					mov $t3, $t0 # keep mask around
 						and $t3, $t1 # get state of center btn
 						beq $t3, $t0, btn_l_oon
@@ -217,13 +284,13 @@ chk_btns_odone: pop $ra
 sh_cursor:   mov   $a2, $a0 # put cursor style in proper reg
 						 li    $t0, cursor_pos
 						 read  $t1, $t0, 0 # get cursor position
-						 li    $a0, cursor_start # address of first cursor position 
-						 li    $t3, menu_text_off_strt
+						 li    $a0, CURSOR_START # address of first cursor position 
+						 li    $t3, MENU_TXT_OFF_STRT
 cursor_loop: beqi  $t1, 0, color_cursor
 						 add   $a0, $t3 # go to next cursor position
 						 subi  $t1, 1
 						 jl    cursor_loop
-color_cursor: li   $a1, menu_itm_text_len # number of chars to highlight
+color_cursor: li   $a1, MENU_ITM_TXT_LEN # number of chars to highlight
 						 push  $ra
 						 jal   style_n_chars # color cursor
 						 pop   $ra
@@ -238,7 +305,7 @@ color_cursor: li   $a1, menu_itm_text_len # number of chars to highlight
 #			$a0 decrement? (boolean indicating 0 = increment or 1 = decrement)
 # returns void
 mov_cursor: mov  $s0, $a0 # save decrement
-						li   $a0, blk_bg_white_fg
+						li   $a0, BLK_BG_WHITE_FG
 						push $ra
 						jal  sh_cursor # hide current cursor
 						li   $t0, cursor_pos
@@ -254,7 +321,7 @@ wrap_to_strt: li $t1, 0
 						jl   movc_fin
 wrap_to_end: li  $t1, 3
 movc_fin:   write $t1, $t0, 0
-						li   $a0, blk_bg_h_red_fg
+						li   $a0, BLK_BG_H_RED_FG
 						jal  sh_cursor
 						pop  $ra
 						jr  $ra
@@ -264,29 +331,29 @@ movc_fin:   write $t1, $t0, 0
 # arguments
 #			none
 # returns void
-draw_cond: li    $a0, menu_text_offset # menu_text_offset
-				li    $a1, title # starting with title
+draw_cond: li    $a0, MENU_TXT_OFFSET # MENU_TXT_OFFSET
+				li    $a1, TITLE # starting with TITLE
 				li    $a2, 5 # clear 5 menu items
 				push  $ra
 				jal 	clr_menu_text
 				
-				# clear dividers
-				li    $a0, divider_offset
-				li    $a1, divider
-				li    $a2, 3 # clear 3 dividers
-				li    $t0, blank_divider_l
-				li    $t1, blank_divider_c
-				li    $t2, blank_divider_r
+				# clear DIVIDERs
+				li    $a0, DIVIDER_OFFSET
+				li    $a1, DIVIDER
+				li    $a2, 3 # clear 3 DIVIDERs
+				li    $t0, blank_DIVIDER_l
+				li    $t1, blank_DIVIDER_c
+				li    $t2, blank_DIVIDER_r
 				push  $t0
 				push  $t1
 				push  $t2
-				jal 	draw_dividers
+				jal 	draw_DIVIDERs
 
-				li    $s0, blk_bg_white_fg # style
-				li    $s1, title # location to start drawing
-				li    $s2, menu_text_off_strt # offset between menu items (first char to first char)
+				li    $s0, BLK_BG_WHITE_FG # style
+				li    $s1, TITLE # location to start drawing
+				li    $s2, MENU_TXT_OFF_STRT # offset between menu items (first char to first char)
 				li    $s3, 0 # counter
-				li    $t1, current_cond_text # title string
+				li    $t1, current_cond_text # TITLE string
 				
 cond_loop: mov $a0, $t1 # pass text to print
 				mov   $a1, $s1 # pass position to print to
@@ -299,9 +366,17 @@ cond_loop: mov $a0, $t1 # pass text to print
 				li    $t1, temperature_text
 				add   $s1, $s2 # skip first item slot
 				jl    cond_loop
-cond2:	bnei  $s3, 2, cond_done
+cond2:	bnei  $s3, 2, cond3
 				li    $t1, humidity_text
-				jl    cond_loop				
+				jl    cond_loop
+cond3:  bnei  $s3, 3, cond4
+				li $t1, str_temperature
+				li $s1, PTR_TEMPERATURE
+				jl    cond_loop
+cond4:  bnei  $s3, 4, cond_done
+				li $t1, str_humidity
+				li $s1, PTR_HUMIDITY
+				jl    cond_loop
 				
 cond_done: li $t0, screen # address of screen counter
 				li    $t1, 2 # set screen state to current conditions
@@ -315,28 +390,28 @@ cond_done: li $t0, screen # address of screen counter
 # arguments
 #			none
 # returns void
-draw_menu: li    $a0, menu_text_offset # menu_text_offset
-				li    $a1, title # starting with title
+draw_menu: li    $a0, MENU_TXT_OFFSET # MENU_TXT_OFFSET
+				li    $a1, TITLE # starting with TITLE
 				li    $a2, 5 # clear 5 menu items
 				push  $ra
 				jal 	clr_menu_text
 				
-				li    $a0, divider_offset
-				li    $a1, divider
-				li    $a2, 3 # draw 3 dividers
-				li    $t0, line_divider_l
-				li    $t1, line_divider_c
-				li    $t2, line_divider_r
+				li    $a0, DIVIDER_OFFSET
+				li    $a1, DIVIDER
+				li    $a2, 3 # draw 3 DIVIDERs
+				li    $t0, line_DIVIDER_l
+				li    $t1, line_DIVIDER_c
+				li    $t2, line_DIVIDER_r
 				push  $t0 # extra args go on stack
 				push  $t1
 				push  $t2
-				jal 	draw_dividers
+				jal 	draw_DIVIDERs
 				
-				li 		$s0, blk_bg_white_fg
-				li    $s1, title
-				li    $s2, menu_text_off_strt
+				li 		$s0, BLK_BG_WHITE_FG
+				li    $s1, TITLE
+				li    $s2, MENU_TXT_OFF_STRT
 				li    $s3, 0 # counter
-				li    $t1, menu_title
+				li    $t1, menu_TITLE
 				
 menu_loop: mov $a0, $t1 # pass text to print
 				mov   $a1, $s1 # pass position to print to
@@ -361,7 +436,7 @@ menu4:	bnei  $s3, 4, menu_done
 menu_done: li $t0, screen # address of screen counter
 				li    $t1, 0
 				write $t1, $t0, 0 # set screen counter to 0
-				li    $a0, blk_bg_h_red_fg
+				li    $a0, BLK_BG_H_RED_FG
 				jal   sh_cursor
 				pop $ra
 				jr $ra
@@ -372,30 +447,30 @@ menu_done: li $t0, screen # address of screen counter
 # arguments
 #			none
 # returns void
-draw_info: li    $a0, menu_text_offset # menu_text_offset
-				li    $a1, title # starting with title
+draw_info: li    $a0, MENU_TXT_OFFSET # MENU_TXT_OFFSET
+				li    $a1, TITLE # starting with TITLE
 				li    $a2, 5 # clear 5 menu items
 				push  $ra
 				jal 	clr_menu_text
 				
-				li    $a0, divider_offset
-				li    $a1, divider
-				li    $a2, 3 # clear 3 dividers
-				li    $t0, blank_divider_l
-				li    $t1, blank_divider_c
-				li    $t2, blank_divider_r
+				li    $a0, DIVIDER_OFFSET
+				li    $a1, DIVIDER
+				li    $a2, 3 # clear 3 DIVIDERs
+				li    $t0, blank_DIVIDER_l
+				li    $t1, blank_DIVIDER_c
+				li    $t2, blank_DIVIDER_r
 				push  $t0
 				push  $t1
 				push  $t2
-				jal 	draw_dividers
+				jal 	draw_DIVIDERs
 
-				li    $s0, blk_bg_h_red_fg
-				li    $s1, title
-				li    $s2, menu_text_off_strt
+				li    $s0, BLK_BG_H_RED_FG
+				li    $s1, TITLE
+				li    $s2, MENU_TXT_OFF_STRT
 				li    $s3, 0 # counter
 				li    $t1, info_text
 				
-				# print info title
+				# print info TITLE
 info_loop: mov $a0, $t1 # pass text to print
 				mov   $a1, $s1 # pass position to print to
 				mov 	$a2, $s0 # pass style (black bg, white fg)
@@ -404,19 +479,19 @@ info_loop: mov $a0, $t1 # pass text to print
 				addi  $s3, 1   # increment counter
 				
         bnei  $s3, 1, info2
-				li $s0, blk_bg_h_blu_fg
+				li $s0, BLK_BG_H_BLU_FG
 				li $t1, info1_text
 				jl info_loop
 info2:	bnei  $s3, 2, info3
-				li $s0, blk_bg_h_grn_fg
+				li $s0, BLK_BG_H_GRN_FG
 				li $t1, info2_text
 				jl info_loop			
 info3:	bnei  $s3, 3, info4
-				li $s0, blk_bg_h_ylw_fg
+				li $s0, BLK_BG_H_YLW_FG
 				li $t1, info3_text
 				jl info_loop
 info4:	bnei  $s3, 4, info_done
-				li $s0, blk_bg_h_cyn_fg
+				li $s0, BLK_BG_H_CYN_FG
 				li $t1, info4_text
 				jl info_loop				
 				
@@ -467,8 +542,8 @@ wait1_done: jr $ra
 
 # clr_menu_text: clear menu text
 # takes pointer to first menu item ($a1), offset between menu items ($a0),
-# and number of menu items to clear ($a2) and clears it with menu_itm_text_len 
-# of menu_itm_blank's
+# and number of menu items to clear ($a2) and clears it with MENU_ITM_TXT_LEN 
+# of MENU_ITM_BLANK's
 # arguments
 #			$a0 offset between menu items (last char to first char)
 #			$a1 first menu item to clear
@@ -479,8 +554,8 @@ clr_menu_text: li $s2, 0
 							 mov $s1, $a2 # menu items to clear
 clr_menu_loop: blt $s2, $s1, clr_menu_item
 							 jr $ra
-clr_menu_item: li $a0, menu_itm_blank
-							 li $a2, menu_itm_text_len # const
+clr_menu_item: li $a0, MENU_ITM_BLANK
+							 li $a2, MENU_ITM_TXT_LEN # const
 							 push $ra # store $ra on stack
 							 jal prnt_n_chars
 							 pop $ra # restore $ra off stack
@@ -489,30 +564,30 @@ clr_menu_item: li $a0, menu_itm_blank
 							 jl clr_menu_loop
 
 
-# draw_dividers
-# takes pointer to first divider ($a1), offset between dividers ($a0), 
-# and number of dividers to draw ($a2) and draws left ($sp+2), center ($sp+1)
-# and right ($sp) dividers
+# draw_DIVIDERs
+# takes pointer to first DIVIDER ($a1), offset between DIVIDERs ($a0), 
+# and number of DIVIDERs to draw ($a2) and draws left ($sp+2), center ($sp+1)
+# and right ($sp) DIVIDERs
 # arguments
-#			$a0   offset between dividers (last char to first char)
-#			$a1   pointer to first dividers
-#			$a2   number of dividers to draw
-#			$sp   pointer to right divider character
-#			$sp+1 pointer to center divider character
-#			$sp+2 pointer to left divider character
+#			$a0   offset between DIVIDERs (last char to first char)
+#			$a1   pointer to first DIVIDERs
+#			$a2   number of DIVIDERs to draw
+#			$sp   pointer to right DIVIDER character
+#			$sp+1 pointer to center DIVIDER character
+#			$sp+2 pointer to left DIVIDER character
 # returns void
-draw_dividers: mov  $s0, $a0 # save args, $s0 = offset between dividers
-							mov   $s1, $a2 # $s1 = number of dividers to draw
-							pop   $s2 # right divider
-							pop   $s3 # center divider
-							pop   $t0 # left divider
+draw_DIVIDERs: mov  $s0, $a0 # save args, $s0 = offset between DIVIDERs
+							mov   $s1, $a2 # $s1 = number of DIVIDERs to draw
+							pop   $s2 # right DIVIDER
+							pop   $s3 # center DIVIDER
+							pop   $t0 # left DIVIDER
 draw_div_loop: bnei  $s1, 0, draw_div
 							jr    $ra
 draw_div:     read  $t1, $t0, 0
-							write $t1, $a1, 0 # draw left divider
+							write $t1, $a1, 0 # draw left DIVIDER
 							addi  $a1, 1 # increment vga screen pointer + 1
 							read  $a0, $s3, 0
-							li    $a2, divider_c_num # num of chars to print
+							li    $a2, DIVIDER_C_NUM # num of chars to print
 							push  $ra
 							push  $t0
 							jal   prnt_n_chars
@@ -520,8 +595,8 @@ draw_div:     read  $t1, $t0, 0
 							pop   $ra
 							read  $t1, $s2, 0
 							write $t1, $a1, 0
-							add   $a1, $s0 # move vga pointer to next divider
-							subi  $s1, 1 # decrement dividers drawn so far
+							add   $a1, $s0 # move vga pointer to next DIVIDER
+							subi  $s1, 1 # decrement DIVIDERs drawn so far
 							jl    draw_div_loop
 
 
@@ -620,9 +695,9 @@ chk_done: add 	$a0, $t2 # restore $a0
 			beqi  $ret, 0, dont_store
 			li    $t0, 0
 store: addi  $ret, 48   # get ascii code
-			write $ret, $a1, 0  # store ascii code into number address
-			addi 	$a1, 1	# increment mem address
-dont_store:	addi  $t1, 1
+			 write $ret, $a1, 0  # store ascii code into number address
+			 addi 	$a1, 1	# increment mem address
+dont_store: addi  $t1, 1
 
 # case structure to determine decimal position to work on
    			 bnei $t1, 1, set_100 
