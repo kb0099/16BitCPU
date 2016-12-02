@@ -87,6 +87,10 @@ public class Assemble {
 	private static final int OP_CODE_POSITION 		= 0;
 	private static final int INSTR_CODE_POSITION 	= 1;
 	private static final Map<String, Integer[]> InstructionOpCodes = new HashMap<>();
+	public static final String ANSI_RESET = "\u001B[0m";
+	public static final String ANSI_GREEN = "\u001B[32m";
+	public static final String ANSI_YELLOW = "\u001B[33m";
+	public static final String ANSI_CYAN = "\u001B[36m";
 	
 	static {		
 		// rType instructions
@@ -207,7 +211,7 @@ public class Assemble {
 				break;
 		}
 		
-		System.out.format("Assembling '%s' into '%s' (using radix %d) \n", assemblyFile, outputFile, outputRadix);
+		System.out.format(ANSI_CYAN + "Assembling '%s' into '%s' (using radix %d) \n" + ANSI_RESET, assemblyFile, outputFile, outputRadix);
 		long start = System.currentTimeMillis(); // time execution time and report
 		
 		// work
@@ -221,10 +225,10 @@ public class Assemble {
 			
 			// prints out instructions
 			String repeated = new String(new char[62]).replace("\0", "-");
-			System.out.format("\nInstructions found: %d\n", lines.size());
-			System.out.println(repeated);
-			System.out.format("%-10s %-10s %-10s %-10s %-10s %-10s\n", "Line #", "Label", "Instr", "Oper1", "Oper2", "Oper3");
-			System.out.println(repeated);
+			System.out.format(ANSI_YELLOW + "\nInstructions found: %d\n" + ANSI_RESET, lines.size());
+			System.out.println(ANSI_GREEN + repeated + ANSI_RESET);
+			System.out.format(ANSI_GREEN + "%-10s %-10s %-10s %-10s %-10s %-10s\n" + ANSI_RESET, "Line #", "Label", "Instr", "Oper1", "Oper2", "Oper3");
+			System.out.println(ANSI_GREEN + repeated + ANSI_RESET);
 			for (List<String> l : lines) {
 				for (String s : l)
 					System.out.format("%-11s", s);
@@ -233,26 +237,26 @@ public class Assemble {
 			System.out.println();
 			
 			if (labels.size() != 0) { // prints our labels
-				System.out.format("Labels found: %d\n", labels.size());
-				System.out.println(repeated);
-				System.out.format("%-20s %-20s\n", "Label", "Label Addr");
-				System.out.println(repeated);
+				System.out.format(ANSI_YELLOW + "Labels found: %d\n" + ANSI_RESET, labels.size());
+				System.out.println(ANSI_GREEN + repeated + ANSI_RESET);
+				System.out.format(ANSI_GREEN + "%-20s %-20s\n" + ANSI_RESET, "Label", "Label Addr");
+				System.out.println(ANSI_GREEN + repeated + ANSI_RESET);
 				labels.forEach((k,v)->System.out.format("%-20s %-20d\n", k, v));
 				System.out.println();
 			}
 			
 			if (globals.size() != 0) { // prints out global variables
-				System.out.format("Global variables found: %d, Used Data Memory: %d/%d\n", globals.size(), dataMemSize, DATA_MEM_SIZE);
-				System.out.println(repeated);
-				System.out.format("%-20s %-20s\n", "Variable", "Mem Addr");
-				System.out.println(repeated);
+				System.out.format(ANSI_YELLOW + "Global variables found: %d, Used Data Memory: %d/%d\n" + ANSI_RESET, globals.size(), dataMemSize, DATA_MEM_SIZE);
+				System.out.println(ANSI_GREEN + repeated + ANSI_RESET);
+				System.out.format(ANSI_GREEN + "%-20s %-20s\n" + ANSI_RESET, "Variable", "Mem Addr");
+				System.out.println(ANSI_GREEN + repeated + ANSI_RESET);
 				globals.forEach((k,v)->System.out.format("%-20s %-20d\n", k, v));
 				System.out.println();
 			}
 			
 			long end = System.currentTimeMillis();
 			double time = (end-start)/1000d; // display execution time in seconds
-			System.out.format("Done \nWrote %d words to '%s' in %.3fs \n", size, outputFile, time);
+			System.out.format(ANSI_CYAN + "Done \nWrote %d words to '%s' in %.3fs \n" + ANSI_RESET, size, outputFile, time);
 		}
 		
 		
