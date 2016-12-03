@@ -14,14 +14,19 @@
 			hours:       0 # for global clock, min 1, max 12
 			minutes:     0 # for global clock, min 0, max 59
 			seconds:     0 # for global clock, min 0, max 59
-			temperature: 48
-			str_temperature: "34 °F" # space for temp, degree symbol, temp unit and null terminator
-			PTR_TEMPERATURE: .const 0x102c
-			humidity:    63
-			str_humidity:    "75  %" # space for 
-			PTR_HUMIDITY: .const 0x122c
-			hist_data: {22, 23, 24, 20, 18, 20, 25, 27, 29, 30, 31} # static data for now, size will eventually equal 11
-			graph_pointer: 0x0
+			farenheit:   0 # boolean indicating which unit to show (C or F), 0 = C, 1 = F
+			temperature: 34
+			str_temperature: "22 °C" # space for temp (max 3 digits), degree symbol, temp unit, & null terminator
+			PTR_TEMPERATURE: .const 0x102c # pointer to area of vga to print to
+			humidity:    71
+			str_humidity:    "75  %" # space for humid (max 3 digits), percent symbol, & null terminator
+			PTR_HUMIDITY: .const 0x122c # pointer to area of vga to print to
+			hist_data: {22, 23, 24, 20, 18, 20, 25, 27, 29, 30, 31} # 11 data points (11 mins)
+			HIST_DATA_WIDTH: .const 11
+			HIST_GRAPH_PTR: .const 0x1399 # pointer to first x position to draw to
+			DST_BTWN_AXIS_LABELS: .const 3
+			Y_AXIS_STEP_SIZE: .const 3 # 3 degrees
+			X_AXIS_STEP_SIZE: .const 1 # 
 			BTN_SW_PTR:    .const 0x4c00
 			BTN_UP_MASK:   .const 0x0001 #  1 = 0..0000 0001
 			BTN_RGHT_MASK: .const 0x0002 #  2 = 0..0000 0010
@@ -43,12 +48,12 @@
 			MENU_TXT_OFFSET:  .const 494 # offset between menu text (last char to first char)
 			MENU_TXT_OFF_STRT: .const 512 # (first char to first char)
 			MENU_ITM_BLANK:    .const 0x20 # space
-			blank_DIVIDER_r:   "´" # right DIVIDER character, vertical bar
-			blank_DIVIDER_l:	 "¸" # left DIVIDER character, vertical bar
-			blank_DIVIDER_c:   " " # center DIVIDER character, space
-			line_DIVIDER_r:    "º" # right DIVIDER character, vertical bar w/ horizontal bar
-			line_DIVIDER_l:    "¹" # left DIVIDER character, vertical bar w/ horizontal bar
-			line_DIVIDER_c:    "»" # center DIVIDER character, horizontal bar
+			blank_divider_r:   "´" # right DIVIDER character, vertical bar
+			blank_divider_l:	 "¸" # left DIVIDER character, vertical bar
+			blank_divider_c:   " " # center DIVIDER character, space
+			line_divider_r:    "º" # right DIVIDER character, vertical bar w/ horizontal bar
+			line_divider_l:    "¹" # left DIVIDER character, vertical bar w/ horizontal bar
+			line_divider_c:    "»" # center DIVIDER character, horizontal bar
 			DIVIDER_C_NUM:     .const 39  # number of center DIVIDER characters to draw
 			DIVIDER_OFFSET:    .const 472 # offset between DIVIDERs (last char to first char)
 			BLK_BG_WHITE_FG:   .const 0x0F00
@@ -57,6 +62,30 @@
 			BLK_BG_H_GRN_FG:   .const 0x0A00
 			BLK_BG_H_YLW_FG:   .const 0x0E00
 			BLK_BG_H_CYN_FG:   .const 0x0B00
+			
+			MENU_STRT:         .const 0x0D93
+			LINE_OFFSET:       .const 88  # last char to first char
+			NUM_MENU_LINES:    .const 15
+			MENU_TOP_LEFT:     .const 0x0D94
+			HIST_LINE_OFFSET:  .const 128 # first char to first char
+			AXIS_TXT_WIDTH:    .const 5
+			hist_y13_axis: "  36"
+			hist_y12_axis: "T   "
+			hist_y11_axis: "e 30"
+			hist_y10_axis: "m   "
+			hist_y9_axis:  "p 24"
+			hist_y8_axis:  "e   "
+			hist_y7_axis:  "r 18"
+			hist_y6_axis:  "a   "
+			hist_y5_axis:  "t 12"
+			hist_y4_axis:  "u   "
+			hist_y3_axis:  "r  6"
+			hist_y2_axis:  "e   "
+			hist_y1_axis:  "   0"
+			hist_x_axis:   "     0  1  2  3  4  5  6  7  8  9  10"
+			hist_x_label:  "              Time (min)"
+			HIST_LOW_PT:   .const 0x0cbc # lower dot (char), blk_bg_h_red_fg
+			
 
 .teak # beginning of assembly code
 
@@ -73,11 +102,10 @@ main:		jal initialize
 				
 				jal   chk_scrn
 				
-				# press center button
+				# press center button (view current cond)
 				jal   wait1sec 
 				li    $a0, BTN_CNTR_MASK
 				jal   press_btn
-				jal   wait1sec
 				
 				jal   chk_scrn
 				
@@ -95,10 +123,42 @@ main:		jal initialize
 				
 				jal   chk_scrn
 				
-				# press center button
+				# press center button (view info)
 				jal   wait1sec 
 				li    $a0, BTN_CNTR_MASK
 				jal   press_btn
+				
+				jal   chk_scrn
+				
+				# press back button
+				jal   wait1sec 
+				li    $a0, BTN_LFT_MASK
+				jal   press_btn
+				
+				jal   chk_scrn
+				
+				# press down button
+				jal   wait1sec 
+				li    $a0, BTN_DWN_MASK
+				jal   press_btn
+				
+				jal   chk_scrn
+				
+				# press down button
+				jal   wait1sec 
+				li    $a0, BTN_DWN_MASK
+				jal   press_btn
+				
+				jal   chk_scrn
+				
+				# press center button (view historical report)
+				jal   wait1sec 
+				li    $a0, BTN_CNTR_MASK
+				jal   press_btn
+				
+				jal   chk_scrn
+				
+				jal wait1sec
 				
 				jal   chk_scrn
 				
@@ -148,7 +208,7 @@ init_done:  li $a0, 0
 
 # chk_scrn: check screen [state]
 # checks what screen is currently displayed and calls the appropriate
-# button checker
+# button checker and update functions
 # arguments
 #			none
 # returns void						
@@ -167,10 +227,45 @@ chk_cond:		bnei $t2, 2, chk_hist
 						jal  chk_btns_oth
 						jl   chk_scrn_done
 chk_hist:	  bnei $t2, 3, chk_scrn_done
+						jal  plot_data
 						jal  chk_btns_oth
 chk_scrn_done:   pop  $ra
 						jr   $ra
 						
+					
+# plot_data
+# plots the historical data stored in hist_data onto the 
+# historical report graph
+# arguments
+#			none
+# returns void	
+plot_data: li $s0, hist_data # pointer to first int in array
+					 li $s1, HIST_GRAPH_PTR
+					 li $s2, HIST_DATA_WIDTH # number of times to loop
+					 li $s3, HIST_LINE_OFFSET
+					 push $ra 
+					 
+plot_ol:	 mov $a1, $s1
+					 read $t0, $s0, 0 # get value
+plot_il:	 subi $t0, Y_AXIS_STEP_SIZE
+					 blti $t0, 0, plot_draw
+					 sub  $a1, $s3 # move up one data section
+					 jl   plot_il
+					 
+plot_draw: addi $t0, Y_AXIS_STEP_SIZE # restore
+					 li   $a0, HIST_LOW_PT # load base data point
+					 add  $a0, $t0 # offset up to display point higher in 8x8 tile
+					 li   $a2, 1 # print one char
+					 jal prnt_n_chars
+					 subi $s2, 1
+					 beqi $s2, 0, plot_d
+					 addi $s1, DST_BTWN_AXIS_LABELS # increment to next x axis label
+					 addi $s0, 1 # move to next value in array
+					 jl   plot_ol
+					 
+plot_d:		 pop $ra
+					 jr   $ra
+
 
 # update_cond: update [current] conditions
 # retrieves the current temperature and humidity (integers) and converts
@@ -236,11 +331,14 @@ chk_btns_menu: li $t0, BTN_SW_PTR
 						
 btn_c_mon:  li   $t2, cursor_pos
 						read $t2, $t2, 0 # get cursor position
-						bnei $t2, 0, btn_cmi
+						bnei $t2, 0, btn_cmc
 						jal draw_info
 						jl  chk_btns_mdone
-btn_cmi:    bnei $t2, 1, chk_btns_mdone
+btn_cmc:    bnei $t2, 1, btn_cmh
 						jal draw_cond
+						jl chk_btns_mdone
+btn_cmh:    bnei $t2, 2, chk_btns_mdone
+						jal draw_hist
 						jl chk_btns_mdone
 
 btn_up_mon: li $a0, 0 # increment cursor
@@ -325,9 +423,69 @@ movc_fin:   write $t1, $t0, 0
 						jal  sh_cursor
 						pop  $ra
 						jr  $ra
+						
+						
+# draw_hist: draw historical [report screen]
+# arguments
+#			none
+# returns void
+draw_hist: li $a0, MENU_TXT_OFFSET # MENU_TXT_OFFSET
+				li    $a1, TITLE # starting with TITLE
+				li    $a2, 5 # clear 5 menu items
+				push  $ra
+				jal 	clr_menu_text
+				
+				# clear DIVIDERs
+				li    $a0, DIVIDER_OFFSET
+				li    $a1, DIVIDER
+				li    $a2, 3 # clear 3 DIVIDERs
+				li    $t0, blank_divider_l
+				li    $t1, blank_divider_c
+				li    $t2, blank_divider_r
+				push  $t0
+				push  $t1
+				push  $t2
+				jal 	draw_dividers
+				
+				# print title
+				li    $a0, hist_report_text
+				li    $a1, TITLE
+				li    $a2, BLK_BG_WHITE_FG
+				jal   prnt
 
-# draw_menu
-# draws the first menu screen
+				li    $s0, BLK_BG_H_BLU_FG # style
+				li    $s1, MENU_TOP_LEFT # location to start drawing
+				li    $s2, HIST_LINE_OFFSET # offset between menu items (first char to first char)
+				li    $s3, hist_y13_axis # first string to print
+				li    $t0, hist_x_axis # string on which to stop printing (sequentially)
+				
+				# print y axis labels
+hist_l: mov   $a0, $s3 # pass text to print
+				mov   $a1, $s1 # pass position to print to
+				mov 	$a2, $s0 # pass style (black bg, white fg)
+				push  $t0 # need to save for after call
+				jal 	prnt
+				pop   $t0
+				add   $s1, $s2 # increment position
+hist_y:	beq   $s3, $t0, hist_x
+				addi  $s3, AXIS_TXT_WIDTH # increment to the next y axis string (relying on the fact that all the y axis strings are stored sequentially)
+				jl hist_l
+				
+hist_x:	li    $a0, hist_x_label
+				mov   $a1, $s1
+				mov   $a2, $s0
+				jal   prnt
+				
+hist_fin: li  $t0, screen # address of screen counter
+				li    $t1, 3 # set screen state to historical report
+				write $t1, $t0, 0 # set screen counter to 0
+				
+				jal plot_data # plot data before returning
+				
+				pop   $ra
+				jr    $ra
+
+# draw_cond: draw [current] conditions screen
 # arguments
 #			none
 # returns void
@@ -341,13 +499,13 @@ draw_cond: li    $a0, MENU_TXT_OFFSET # MENU_TXT_OFFSET
 				li    $a0, DIVIDER_OFFSET
 				li    $a1, DIVIDER
 				li    $a2, 3 # clear 3 DIVIDERs
-				li    $t0, blank_DIVIDER_l
-				li    $t1, blank_DIVIDER_c
-				li    $t2, blank_DIVIDER_r
+				li    $t0, blank_divider_l
+				li    $t1, blank_divider_c
+				li    $t2, blank_divider_r
 				push  $t0
 				push  $t1
 				push  $t2
-				jal 	draw_DIVIDERs
+				jal 	draw_dividers
 
 				li    $s0, BLK_BG_WHITE_FG # style
 				li    $s1, TITLE # location to start drawing
@@ -385,27 +543,28 @@ cond_done: li $t0, screen # address of screen counter
 				jr    $ra
 
 
-# draw_menu
-# draws the first menu screen
+# draw_menu: draw menu [screen]
 # arguments
 #			none
 # returns void
-draw_menu: li    $a0, MENU_TXT_OFFSET # MENU_TXT_OFFSET
+draw_menu: li $a0, 0 # MENU_TXT_OFFSET
 				li    $a1, TITLE # starting with TITLE
-				li    $a2, 5 # clear 5 menu items
+				li    $a2, 1 # clear title
 				push  $ra
 				jal 	clr_menu_text
+				
+				jal   clr_menu # clear entire menu space
 				
 				li    $a0, DIVIDER_OFFSET
 				li    $a1, DIVIDER
 				li    $a2, 3 # draw 3 DIVIDERs
-				li    $t0, line_DIVIDER_l
-				li    $t1, line_DIVIDER_c
-				li    $t2, line_DIVIDER_r
+				li    $t0, line_divider_l
+				li    $t1, line_divider_c
+				li    $t2, line_divider_r
 				push  $t0 # extra args go on stack
 				push  $t1
 				push  $t2
-				jal 	draw_DIVIDERs
+				jal 	draw_dividers
 				
 				li 		$s0, BLK_BG_WHITE_FG
 				li    $s1, TITLE
@@ -456,13 +615,13 @@ draw_info: li    $a0, MENU_TXT_OFFSET # MENU_TXT_OFFSET
 				li    $a0, DIVIDER_OFFSET
 				li    $a1, DIVIDER
 				li    $a2, 3 # clear 3 DIVIDERs
-				li    $t0, blank_DIVIDER_l
-				li    $t1, blank_DIVIDER_c
-				li    $t2, blank_DIVIDER_r
+				li    $t0, blank_divider_l
+				li    $t1, blank_divider_c
+				li    $t2, blank_divider_r
 				push  $t0
 				push  $t1
 				push  $t2
-				jal 	draw_DIVIDERs
+				jal 	draw_dividers
 
 				li    $s0, BLK_BG_H_RED_FG
 				li    $s1, TITLE
@@ -549,10 +708,9 @@ wait1_done: jr $ra
 #			$a1 first menu item to clear
 #			$a2 number of menu items to clear
 # returns void
-clr_menu_text: li $s2, 0
-							 mov $s0, $a0 # offset
+clr_menu_text: mov $s0, $a0 # offset
 							 mov $s1, $a2 # menu items to clear
-clr_menu_loop: blt $s2, $s1, clr_menu_item
+clr_menu_loop: beqi $s1, 0, clr_menu_item
 							 jr $ra
 clr_menu_item: li $a0, MENU_ITM_BLANK
 							 li $a2, MENU_ITM_TXT_LEN # const
@@ -560,31 +718,52 @@ clr_menu_item: li $a0, MENU_ITM_BLANK
 							 jal prnt_n_chars
 							 pop $ra # restore $ra off stack
 							 add $a1, $s0
-							 addi $s2, 1
+							 subi $s1, 1
 							 jl clr_menu_loop
+							 
 
-
-# draw_DIVIDERs
-# takes pointer to first DIVIDER ($a1), offset between DIVIDERs ($a0), 
-# and number of DIVIDERs to draw ($a2) and draws left ($sp+2), center ($sp+1)
-# and right ($sp) DIVIDERs
+# clr_menu: clear menu
+# clears the entire menu area of all text
 # arguments
-#			$a0   offset between DIVIDERs (last char to first char)
-#			$a1   pointer to first DIVIDERs
-#			$a2   number of DIVIDERs to draw
-#			$sp   pointer to right DIVIDER character
-#			$sp+1 pointer to center DIVIDER character
-#			$sp+2 pointer to left DIVIDER character
+#			none
 # returns void
-draw_DIVIDERs: mov  $s0, $a0 # save args, $s0 = offset between DIVIDERs
-							mov   $s1, $a2 # $s1 = number of DIVIDERs to draw
-							pop   $s2 # right DIVIDER
-							pop   $s3 # center DIVIDER
-							pop   $t0 # left DIVIDER
+clr_menu: li    $a0, LINE_OFFSET 
+					li    $a1, MENU_STRT 
+					li    $a2, NUM_MENU_LINES # clear all lines in menu
+					li    $t0, blank_divider_l
+					li    $t1, blank_divider_c
+					li    $t2, blank_divider_r
+					push  $ra
+					push  $t0
+					push  $t1
+					push  $t2
+					jal   draw_dividers
+					pop   $ra
+					jr    $ra
+					
+
+
+# draw_dividers
+# takes pointer to first divider ($a1), offset between dividers ($a0), 
+# and number of dividers to draw ($a2) and draws left ($sp+2), center ($sp+1)
+# and right ($sp) dividers
+# arguments
+#			$a0   offset between dividers (last char to first char)
+#			$a1   pointer to first dividers
+#			$a2   number of dividers to draw
+#			$sp   pointer to right divider character
+#			$sp+1 pointer to center divider character
+#			$sp+2 pointer to left divider character
+# returns void
+draw_dividers: mov  $s0, $a0 # save args, $s0 = offset between dividers
+							mov   $s1, $a2 # $s1 = number of dividers to draw
+							pop   $s2 # right divider
+							pop   $s3 # center divider
+							pop   $t0 # left divider
 draw_div_loop: bnei  $s1, 0, draw_div
 							jr    $ra
 draw_div:     read  $t1, $t0, 0
-							write $t1, $a1, 0 # draw left DIVIDER
+							write $t1, $a1, 0 # draw left divider
 							addi  $a1, 1 # increment vga screen pointer + 1
 							read  $a0, $s3, 0
 							li    $a2, DIVIDER_C_NUM # num of chars to print
@@ -595,8 +774,8 @@ draw_div:     read  $t1, $t0, 0
 							pop   $ra
 							read  $t1, $s2, 0
 							write $t1, $a1, 0
-							add   $a1, $s0 # move vga pointer to next DIVIDER
-							subi  $s1, 1 # decrement DIVIDERs drawn so far
+							add   $a1, $s0 # move vga pointer to next divider
+							subi  $s1, 1 # decrement dividers drawn so far
 							jl    draw_div_loop
 
 
