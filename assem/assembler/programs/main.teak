@@ -20,9 +20,9 @@
 			MENU_ITM_BLANK:    .const 0x20 # space
 			cursor_pos:  0 # 0 = item0, 1 = item1, 2 = item2, 3 = item3
 			screen:      0 # 0 = menu, 1 = info, 2 = current cond, 3 = historical report, 4 = game?
-			hours:       0 # for global clock, min 1, max 12
-			minutes:     0 # for global clock, min 0, max 59
-			seconds:     0 # for global clock, min 0, max 59
+			hours:       0 # for global clock, min 1, max 12 !UNIMPLEMENTED!
+			minutes:     0 # for global clock, min 0, max 59 !UNIMPLEMENTED!
+			seconds:     0 # for global clock, min 0, max 59 !UNIMPLEMENTED!
 			blank_divider_r:   "´" # right DIVIDER character, vertical bar
 			blank_divider_l:	 "¸" # left DIVIDER character, vertical bar
 			blank_divider_c:   " " # center DIVIDER character, space
@@ -53,6 +53,9 @@
 			humidity_text:     "Humidity:"
 			
 			# I/O
+			TEMP_HUMI_PTR: .const 0x4c01 # address of temp/humidity sensor input
+			TEMP_MASK:     .const 0xff00 # use to get temperature bits
+			HUMI_MASK:     .const 0x00ff # use to get humidity bits
 			BTN_SW_PTR:    .const 0x4c00 # address of buttons/switches input
 			BTN_UP_MASK:   .const 0x0001 #  1 = 0..0000 0001
 			BTN_RGHT_MASK: .const 0x0002 #  2 = 0..0000 0010
@@ -101,6 +104,7 @@
 			
 
 .teak # beginning of assembly code
+################################################################################
 
 # main program entry point
 main:		jal initialize
@@ -184,11 +188,15 @@ main:		jal initialize
 				
 while:  jl main
 
+################################################################################
+
 
 # simulate btn presses. $a0 is the button to press (use mask)
 press_btn: li $t0, BTN_SW_PTR
 					 write $a0, $t0, 0
 					 jr $ra
+				
+################################################################################
 
 
 # explicitly clears all registers and sets $sp. Also runs 
@@ -218,6 +226,8 @@ init_loop:  beqi $a0, 0, init_done
 init_done:  li $a0, 0
 						jr $ra
 						
+################################################################################
+						
 
 # chk_scrn: check screen [state]
 # checks what screen is currently displayed and calls the appropriate
@@ -245,6 +255,48 @@ chk_hist:	  bnei $t2, 3, chk_scrn_done
 chk_scrn_done:   pop  $ra
 						jr   $ra
 						
+################################################################################
+
+
+# update_data
+# gets the current temperature and humidity (from sensor input)
+# and updates the appropriate variables. Also updates the 
+# hist_data array with most current temperature
+# arguments
+#			none
+# returns void
+update_data: li   $t0, TEMP_HUMI_PTR
+						 read $t0, $t0, 0 # get sensor data
+						 li   $s0, TEMP_MASK
+						 li   $t2, 8 # shift amount to put temperature in proper place
+						 li   $t3, temperature # address of where to store temperature
+						 and  $s0, $t0 # get temperature
+						 srl  $s0, $t2 # put temperature in bottom 8 bits
+						 write $s0, $t3, 0 # store temperature						 
+						 
+						 li  $t2, HUMI_MASK
+						 li  $t3, humidity # address of where to store humidity
+						 and $t2, $t0 # get humidity
+						 write $t2, $t3, 0 # store humidity
+						 
+						 # now load temperature into hist_data (first position) and shift
+						 li   $t0, HIST_DATA_LEN
+						 li   $s1, hist_data # get data array
+						 mov  $t1, $s1 # keep hist_data base
+						 addi $s1, 1 # monitor second element
+						 add  $t1, $t0 # last element address + 1 (careful! this if off array)
+update_l:    subi $t1, 2 # second to last element index
+						 read $t2, $t1, 0 # get second to last element
+						 addi $t1, 1 # last element index
+						 write $t2, $t1, 0 # put it in the last space
+						 beq  $t1, $s1, l_1st_elem # if have reached 2nd element, finish and load 1st element (newest data)
+						 jl   update_l
+						 
+l_1st_elem:  subi $t1, 1
+						 write $s0, $t1, 0 # store newest data
+						 jr $ra
+						 
+################################################################################
 					
 # plot_data
 # plots the historical data stored in hist_data onto the 
@@ -279,10 +331,12 @@ plot_draw: addi $t0, Y_AXIS_STEP_SIZE # restore
 plot_d:		 pop $ra
 					 jr   $ra
 
+################################################################################
 
 # update_cond: update [current] conditions
-# retrieves the current temperature and humidity (integers) and converts
-# both to strings. finally, each is printed to the screen
+# retrieves the current temperature and humidity (integers, 
+# from global vars) and converts both to strings. 
+# finally, each is printed to the screen
 # arguments
 #			none
 # returns void						
@@ -313,7 +367,8 @@ update_cond: li $a0, temperature # convert temperature to string
 						 pop $ra
 						 jr $ra
 						 
-						
+################################################################################
+
 
 # chk_btns_menu: check button [states in] menu [screen]
 # checks the state of the buttons while the menu screen is being displayed
@@ -364,6 +419,8 @@ btn_dwn_mon: li $a0, 1 # decrement cursor
 chk_btns_mdone: pop $ra
 						jr $ra
 						
+################################################################################
+						
 # chk_btns_other: check button [states in] other [screens]
 # checks the state of the buttons while the other screens are being displayed. 
 # this is primarily for any screen that only registers the "back" (left btn)
@@ -385,6 +442,8 @@ btn_l_oon:  jal draw_menu
 						
 chk_btns_odone: pop $ra
 						jr $ra
+						
+################################################################################
 
 
 # sh_cursor: show/hide cursor
@@ -406,6 +465,8 @@ color_cursor: li   $a1, MENU_ITM_TXT_LEN # number of chars to highlight
 						 jal   style_n_chars # color cursor
 						 pop   $ra
 						 jr 	 $ra
+						 
+################################################################################
 
 
 # mov_cursor: move cursor (up or down)
