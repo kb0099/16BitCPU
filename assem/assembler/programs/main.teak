@@ -45,16 +45,15 @@
 			PTR_TEMPERATURE: .const 0x102c # pointer to area of vga to print to
 			PTR_HUMIDITY:    .const 0x122c # pointer to area of vga to print to
 			farenheit:   0 # boolean indicating which unit to show (C or F), 0 = C, 1 = F !UNIMPLEMENTED!
-			temperature: 34
-			humidity:    71
-			str_temperature: "22 °C" # space for temp (max 3 digits), degree symbol, temp unit, & null terminator
-			str_humidity:    "75  %" # space for humid (max 3 digits), percent symbol, & null terminator
+			temperature: 0
+			humidity:    0
+			str_temperature: "   °C" # space for temp (max 3 digits), degree symbol, temp unit, & null terminator
+			str_humidity:    "    %" # space for humid (max 3 digits), percent symbol, & null terminator
 			temperature_text:	 "Temperature:"
 			humidity_text:     "Humidity:"
 			
 			# I/O
 			TEMP_HUMI_PTR: .const 0x4c01 # address of temp/humidity sensor input
-			TEMP_MASK:     .const 0xff00 # use to get temperature bits
 			HUMI_MASK:     .const 0x00ff # use to get humidity bits
 			BTN_SW_PTR:    .const 0x4c00 # address of buttons/switches input
 			BTN_UP_MASK:   .const 0x0001 #  1 = 0..0000 0001
@@ -84,7 +83,7 @@
 			HIST_LINE_OFFSET:  .const 128 # first char to first char
 			AXIS_TXT_WIDTH:    .const 5 # string width (including null terminator) of hist_y1_axis, hist_y2_axis, etc.
 			HIST_LOW_PT:       .const 0x0cbc # lower dot (char), blk_bg_h_red_fg
-			hist_data:     {22, 23, 24, 20, 18, 20, 25, 27, 29, 30, 31} # 11 data points (11 mins)
+			hist_data:     {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0} # 11 data points (11 mins)
 			hist_y13_axis: "  36"
 			hist_y12_axis: "T   "
 			hist_y11_axis: "e 30"
@@ -107,52 +106,7 @@
 ################################################################################
 
 # main program entry point
-main:		jal initialize
-
-				li    $a0, BLK_BG_H_RED_FG
-				jal   sh_cursor
-				
-				# press down button
-				jal   wait1sec 
-				li    $a0, BTN_DWN_MASK
-				jal   press_btn
-				
-				jal   chk_scrn
-				
-				# press center button (view current cond)
-				jal   wait1sec 
-				li    $a0, BTN_CNTR_MASK
-				jal   press_btn
-				
-				jal   chk_scrn
-				
-				# press back button
-				jal   wait1sec 
-				li    $a0, BTN_LFT_MASK
-				jal   press_btn
-				
-				jal   chk_scrn
-				
-				# press up button
-				jal   wait1sec 
-				li    $a0, BTN_UP_MASK
-				jal   press_btn
-				
-				jal   chk_scrn
-				
-				# press center button (view info)
-				jal   wait1sec 
-				li    $a0, BTN_CNTR_MASK
-				jal   press_btn
-				
-				jal   chk_scrn
-				
-				# press back button
-				jal   wait1sec 
-				li    $a0, BTN_LFT_MASK
-				jal   press_btn
-				
-				jal   chk_scrn
+main:		jal initialize # intialize registers, stabalize core, highlight cursor
 				
 				# press down button
 				jal   wait1sec 
@@ -175,16 +129,11 @@ main:		jal initialize
 				
 				jal   chk_scrn
 				
-				jal wait1sec
-				
+ml:			jal   wait1sec
+				jal   sim_data
+				jal   update_data
 				jal   chk_scrn
-				
-				# press back button
-				jal   wait1sec 
-				li    $a0, BTN_LFT_MASK
-				jal   press_btn
-				
-				jal   chk_scrn				
+				jl    ml				
 				
 while:  jl main
 
@@ -199,12 +148,24 @@ press_btn: li $t0, BTN_SW_PTR
 ################################################################################
 
 
+# simulate data updating
+sim_data: li    $t0, TEMP_HUMI_PTR
+				  read  $t2, $t0, 0 # get sensor data
+				  li    $t1, 8 # shift amount to put temperature in proper place
+				  srl   $t2, $t1 # put temperature in bottom 8 bits
+					addi  $t2, 1 # increment temperature
+					slli  $t2, 8 # put temperature back in upper bits
+				  write $t2, $t0, 0 # store temperature
+					jr    $ra
+					
+################################################################################
+
 # explicitly clears all registers and sets $sp. Also runs 
 # the clk for ~65,000 cycles in order allow cpu to stabalize.
 # arguments
 #			none
 # returns void
-initialize: li $a0, TITLE
+initialize: li $a0, 0
 						li $a1, 0
 						li $a2, 0
 						li $s0, 0
@@ -215,16 +176,20 @@ initialize: li $a0, TITLE
 						li $t1, 0
 						li $t2, 0
 						li $t3, 0
-						li $ret, TITLE
+						li $ret, 0
 						li $sp, SP_START # initialize stack pointer address
 						li $at, 0
 						
-						li $a0, 65000
+						li   $a0, 65000
 init_loop:  beqi $a0, 0, init_done
 						subi $a0, 1
-						jl init_loop
-init_done:  li $a0, 0
-						jr $ra
+						jl   init_loop
+init_done:  li   $a0, BLK_BG_H_RED_FG # highlight cursor
+						push $ra
+						jal  sh_cursor
+						jal  chk_scrn # update screen
+						pop  $ra
+						jr   $ra
 						
 ################################################################################
 						
@@ -250,7 +215,7 @@ chk_cond:		bnei $t2, 2, chk_hist
 						jal  chk_btns_oth
 						jl   chk_scrn_done
 chk_hist:	  bnei $t2, 3, chk_scrn_done
-						jal  plot_data
+						jal  draw_hist
 						jal  chk_btns_oth
 chk_scrn_done:   pop  $ra
 						jr   $ra
@@ -266,25 +231,24 @@ chk_scrn_done:   pop  $ra
 #			none
 # returns void
 update_data: li   $t0, TEMP_HUMI_PTR
-						 read $t0, $t0, 0 # get sensor data
-						 li   $s0, TEMP_MASK
+						 read $s0, $t0, 0 # get sensor data (keep $s0 around for final step of updating hist_data)
 						 li   $t2, 8 # shift amount to put temperature in proper place
-						 li   $t3, temperature # address of where to store temperature
-						 and  $s0, $t0 # get temperature
 						 srl  $s0, $t2 # put temperature in bottom 8 bits
-						 write $s0, $t3, 0 # store temperature						 
+						 li   $t3, temperature # address of where to store temperature
+						 write $s0, $t3, 0 # store temperature
 						 
+						 read $t0, $t0, 0 # get sensor data
 						 li  $t2, HUMI_MASK
-						 li  $t3, humidity # address of where to store humidity
 						 and $t2, $t0 # get humidity
+						 li  $t3, humidity # address of where to store humidity
 						 write $t2, $t3, 0 # store humidity
 						 
 						 # now load temperature into hist_data (first position) and shift
 						 li   $t0, HIST_DATA_LEN
 						 li   $s1, hist_data # get data array
-						 mov  $t1, $s1 # keep hist_data base
-						 addi $s1, 1 # monitor second element
+						 mov  $t1, $s1
 						 add  $t1, $t0 # last element address + 1 (careful! this if off array)
+						 addi $s1, 1 # monitor second element
 update_l:    subi $t1, 2 # second to last element index
 						 read $t2, $t1, 0 # get second to last element
 						 addi $t1, 1 # last element index
@@ -293,7 +257,7 @@ update_l:    subi $t1, 2 # second to last element index
 						 jl   update_l
 						 
 l_1st_elem:  subi $t1, 1
-						 write $s0, $t1, 0 # store newest data
+						 write $s0, $t1, 0 # store newest data ($s0)
 						 jr $ra
 						 
 ################################################################################
@@ -503,23 +467,8 @@ movc_fin:   write $t1, $t0, 0
 # arguments
 #			none
 # returns void
-draw_hist: li $a0, MENU_TXT_OFFSET # MENU_TXT_OFFSET
-				li    $a1, TITLE # starting with TITLE
-				li    $a2, 5 # clear 5 menu items
-				push  $ra
-				jal 	clr_menu_text
-				
-				# clear DIVIDERs
-				li    $a0, DIVIDER_OFFSET
-				li    $a1, DIVIDER
-				li    $a2, 3 # clear 3 DIVIDERs
-				li    $t0, blank_divider_l
-				li    $t1, blank_divider_c
-				li    $t2, blank_divider_r
-				push  $t0
-				push  $t1
-				push  $t2
-				jal 	draw_dividers
+draw_hist: push  $ra				
+				jal   clr_menu # clear entire menu space
 				
 				# print title
 				li    $a0, hist_report_text
@@ -784,13 +733,13 @@ wait1_done: jr $ra
 # returns void
 clr_menu_text: mov $s0, $a0 # offset
 							 mov $s1, $a2 # menu items to clear
-clr_menu_loop: beqi $s1, 0, clr_menu_item
+							 push $ra # store $ra on stack
+clr_menu_loop: bnei $s1, 0, clr_menu_item
+							 pop $ra # restore $ra off stack
 							 jr $ra
 clr_menu_item: li $a0, MENU_ITM_BLANK
 							 li $a2, MENU_ITM_TXT_LEN # const
-							 push $ra # store $ra on stack
 							 jal prnt_n_chars
-							 pop $ra # restore $ra off stack
 							 add $a1, $s0
 							 subi $s1, 1
 							 jl clr_menu_loop
