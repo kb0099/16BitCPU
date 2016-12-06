@@ -128,7 +128,7 @@ module NewFSMCore2(
 
 	//
 	//
-	reg[15:0] lifafa[15:1];	// $zero is a dummy register.
+	reg[15:0] lifafa[15:0];	// $zero is a dummy register.
 	integer ii;						// loop variable
 	
 	// read operations
@@ -138,15 +138,14 @@ module NewFSMCore2(
 	// write operations
 	always @(posedge clk) begin
 		if(reset) begin
-			for(ii = 1; ii <= 15; ii = ii + 1) begin
+			for(ii = 0; ii <= 15; ii = ii + 1) begin
 				lifafa[ii] <= 16'd0;
 			end
 		end else begin
-			if(we_d && (write_addr_d != 4'd0)) begin
+			if(we_d) begin
 				lifafa[write_addr_d] <= data_in_d;
 			end
-			// c's data should be written in case of same address.
-			if(we_c && (write_addr_c != 4'd0)) begin
+			if(we_c ) begin
 				lifafa[write_addr_c] <= data_in_c;
 			end
 		end
