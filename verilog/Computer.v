@@ -11,7 +11,7 @@ module computer(
 	
 	/* KADD */
 	input[4:0] sw,
-	input btnd,
+	//input btnd,
 	output[3:0] an,
 	output[7:0] seg
     );
