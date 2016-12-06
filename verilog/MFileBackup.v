@@ -128,7 +128,7 @@ module NewFSMCore2(
 
 	//
 	//
-	reg[15:0] lifafa[15:0];	// $zero is a dummy register.
+	reg[15:0] lifafa[15:0];	
 	integer ii;						// loop variable
 	
 	// read operations
