@@ -74,7 +74,7 @@ module NewFSMCore2(
   // Reset/Ex -- to -- > Fetch 	: PC++; MAR fixed
   // Fetch ----- to ---> Execute: PC fixed; MAR <= PC;
   always @(posedge clk) begin
-	 sr <= reset ? 2'd0 : ((|IR[15:11]) ? {lt, z} : sr); 	// KTODO :: need to update as core progresses
+	 sr <= reset ? 2'b0 : (IR[15:11] == 5'b00001 || IR[15:11]==5'b01001) ?  {lt, z} : sr); 	// KTODO :: need to update as core progresses
     case (ps)
       Reset: begin
         if(!reset)  begin
@@ -108,11 +108,11 @@ module NewFSMCore2(
           PC 	<= {PC+1};//[23:0]; // increment before going to Fetch for non-m type (make MAR redundant)   
         end
                
-          IR 	<= 16'd0;
+          IR 	<= {2'b01, 14'd0};
       end
       Memory: begin
         PC <= {PC+1};//[23:0];				// increment before going to Fetch
-        IR <= 16'd0;
+        IR <= {2'b01, 14'd0};
         // if branch instruction need to re-adjusts PC here.
       end
     endcase
@@ -121,7 +121,7 @@ module NewFSMCore2(
     if(reset) 	begin
       PC 	<= PC_START;
       MAR	<= PC_START;
-      IR 	<= 16'd0;
+      IR 	<= {2'b01, 14'd0};
     end
   end
 
@@ -132,8 +132,8 @@ module NewFSMCore2(
 	integer ii;						// loop variable
 	
 	// read operations
-	assign data_out_a = (read_addr_a == 4'd0) ? 16'd0 : lifafa[read_addr_a];
-	assign data_out_b = (read_addr_b == 4'd0) ? 16'd0 : lifafa[read_addr_b];
+	assign data_out_a = /*(read_addr_a == 4'd0) ? 16'd0 : */ lifafa[read_addr_a];
+	assign data_out_b = /*(read_addr_b == 4'd0) ? 16'd0 : */ lifafa[read_addr_b];
 	
 	// write operations
 	always @(posedge clk) begin
