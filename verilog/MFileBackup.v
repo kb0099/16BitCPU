@@ -219,11 +219,14 @@ module NewFSMCore2(
 
 
   // enable to true if lw	
+  reg we_d_last = 1'b0;
   always @(posedge clk) begin		
     we_d 						<= lw; // (instruction[15:13] == 3'b100);		// load word
+	 we_d_last  				<= we_d;
     write_addr_d 				<= instruction[3:0];
     if(reset) begin
       we_d 						<= 1'b0;
+		we_d_last				<= 1'b0;
     end
   end
 
@@ -235,8 +238,8 @@ module NewFSMCore2(
 
 
   // KTODO :: Currently many instructions need write enable.
-  assign we_c 					= (instruction[15:14] != 2'b11) && (instruction[15:14] != 3'b10) || jal_type;		// if not branch and not load/store word
-  assign data_mem_we 		= (instruction[15:13] == 3'b101);												// store word 
+  assign we_c 					= (!we_d && !we_d_last) && ((instruction[15:14] != 2'b11) && (instruction[15:14] != 3'b10) || jal_type);		// if not branch and not load/store word
+  assign data_mem_we 		= (instruction[15:13] == 3'b101);												// store word 											// store word 
 
   // control signals for lw/sw
   assign m_type_imm				= instruction[12:8];	
