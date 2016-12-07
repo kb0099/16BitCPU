@@ -74,7 +74,7 @@ module NewFSMCore2(
   // Reset/Ex -- to -- > Fetch 	: PC++; MAR fixed
   // Fetch ----- to ---> Execute: PC fixed; MAR <= PC;
   always @(posedge clk) begin
-	 sr <= reset ? 2'b0 : (IR[15:11] == 5'b00001 || IR[15:11]==5'b01001) ?  {lt, z} : sr); 	// KTODO :: need to update as core progresses
+	 sr <= reset ? 2'b0 : (IR[15:11] == 5'b00001 || IR[15:11]==5'b01001) ?  {lt, z} : sr; 	// KTODO :: need to update as core progresses
     case (ps)
       Reset: begin
         if(!reset)  begin
