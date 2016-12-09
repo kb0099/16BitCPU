@@ -26,14 +26,13 @@ module VgaDisplay(
 	output 		  HSync,
 	output 		  VSync,
 	input  [15:0] vgad_data,
-	output [14:0] vgad_addr,
-	output [1:0] pixel_state
+	output [14:0] vgad_addr
     );
 	 
 	wire [9:0] pixel_counter;
 	wire [8:0] line_counter;
 	wire [7:0] color_internal;
-	//wire [1:0] pixel_state;
+	wire [1:0] pixel_state;
 	
 	VgaCounter _VgaCounter(
 		enable, 

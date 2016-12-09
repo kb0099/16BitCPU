@@ -27,10 +27,7 @@ module MemController(
 	output [15:0] core_data_out,
 	input  [14:0] vga_addr,
    output [15:0] vga_data_out,
-	input  [ 1:0] pixel_state,
-	input  [23:0] input_addr,
-	input  [15:0] input_data,
-	output [23:0] output_addr,
+	input  [15:0] io_data_in,
 	output [15:0] output_data
     );
 	 
@@ -64,15 +61,27 @@ module MemController(
 	wire 			 weA;
 	wire  [14:0] addressA;
 	wire  [15:0] dinA;
-	wire  [15:0] doutA;
+   // io/memory mux for core_data_out
+   wire [15:0] core_data_mem_out;
+	reg count = 1'b0;
+	
+	// stall IO requests by 1 cyle to simulate how memory serves data
+	always@(posedge clk) begin
+		if(core_addr[14:0] >= ADDR_INPUT && core_addr[14:0] < ADDR_OUTPUT)
+			count <= count + 1'b1;
+		else
+			count <= 1'b0;
+	end
+	
+   assign core_data_out = (count) ? io_data_in : core_data_mem_out;
 	
 	// muxes to share port A with VGA and INPUT
-	assign weA      = (pixel_state < 2'd2) ? 1'b0 : input_addr[23];
-	assign addressA = (pixel_state < 2'd2) ? vga_addr : input_addr[14:0];
-	assign dinA	    = (pixel_state < 2'd2) ? 15'd0 : input_data;
+	assign weA      = 1'b0;
+	assign addressA = vga_addr;
+	assign dinA	    = 15'd0;
 	
 	// muxes to grab core data for OUTPUT
-	assign output_addr = (core_addr[14:0] >= ADDR_OUTPUT && core_addr[14:0] < ADDR_STACK) ? core_addr : 24'd0;
+	//assign output_addr = (core_addr[14:0] >= ADDR_OUTPUT && core_addr[14:0] < ADDR_STACK) ? core_addr : 24'd0;
 	assign output_data = (core_addr[14:0] >= ADDR_OUTPUT && core_addr[14:0] < ADDR_STACK) ? core_data_in : 16'd0;
 
 	//instructionROM _instrROM(clk, 1'b0, instr_addr, 15'd0, instr_out);
@@ -86,7 +95,7 @@ module MemController(
 		.web(core_addr[23]),
 		.addrb(core_addr[14:0]), 
 		.dinb(core_data_in),
-		.doutb(core_data_out)
+		.doutb(core_data_mem_out)
 	);
 						  
 endmodule

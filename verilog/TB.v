@@ -37,54 +37,10 @@ module TB;
 		reset = 1;
 		ext_clk = 0;
 		sw = 0;
-		btnd = 0;
-		
-		#11;
-		
-		sw <= 1;
-		#7 reset <= 0;
-		
-		#7 btnd <= 1;
-		#72 btnd <= 0;
-	
+		btnd = 0;	
 
-		
-		#77 btnd <= 1;
-		#72 btnd <= 0;
-	
-
-		
-		#77 btnd <= 1;
-		#72 btnd <= 0;
-	
-
-		
-		#77 btnd <= 1;
-		#27 btnd <= 0;
-	
-
-		
-		#77 btnd <= 1;
-		#2 btnd <= 0;
-	
-
-		
-		#77 btnd <= 1;
-		#72 btnd <= 0;
-	
-
-		
-		#77 btnd <= 1;
-		#72 btnd <= 0;
-	
-
-		
-		#7 btnd <= 1;
-		#2 btnd <= 0;
-	
-
-		// Wait 100 ns for global reset to finish
-		#10000;
+		// Wait 10 ns for global reset to finish
+		#10;
         
 		// Add stimulus here
 

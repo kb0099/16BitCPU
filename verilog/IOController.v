@@ -1,66 +1,39 @@
-`timescale 1ns / 1ps
-//////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
-// 
-// Create Date:    15:30:24 11/01/2016 
-// Design Name: 
-// Module Name:    IOController 
-// Project Name: 
-// Target Devices: 
-// Tool versions: 
-// Description: 
-//
-// Dependencies: 
-//
-// Revision: 
-// Revision 0.01 - File Created
-// Additional Comments: 
-//
-//////////////////////////////////////////////////////////////////////////////////
 module IOController(
-   input clk,
-   input i1,
-   input i1sig,
-   input io1,
-   input i2,
-   input i2sig,
-   input io2,
-   input i3,
-   input i3sig,
-   input io3,
-   output o1,
-   output o2,
-   output o3,
-   output reg mainout,
-   output mainout2
-    );
+	input clk, 
+	input [23:0] address_in,
+	input sensorready, 
+	input [15:0] sensor_out, 
+	input [15:0] buttons_out,
+   input [15:0] leds_in,
+	output reg [15:0] data_out,
+   output reg [7:0] leds_out
+	);
+	// SET THATAE PARAMETERSS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	parameter BUTTON_ADDRESS = 19456;
+	parameter SENSOR_ADDRESS = 19457;
+   parameter LEDS_ADDRESS = 19958;
     
-    reg [1:0] clkcnt = 2'b00;
-    
-    always@*
-    begin
-       o1 = io1;
-       o2 = io2;
-       o3 = io3;
-       if (i1sig == 1'b1)
-         mainout2 = i1;
-       else if (i2sig == 1'b1)
-         mainout2 = i2;
-       else if (i3sig == 1'b1)
-         mainout2 = i3;
-    end
-    
+	 reg [15:0] sensor; // sensor data
+	 reg [15:0] buttons; // button state
+    initial data_out = 16'b0;
+	 
     always@(posedge clk)
     begin
-      if (clkcount == 2'b00)
-         mainout <= i1;
-      else if (clkcnt == 2'b01)
-         mainout <= i2;
-      else if (clkcnt == 2'b10)
-         mainout <= i3;
-         
-      clkcnt <= clkcnt + 1'b1;
+      if (sensorready==1'b1)
+         sensor <= sensor_out;
+      else if (address_in[14:0] == LEDS_ADDRESS && address_in[23] == 1'b1)
+         leds_out <= leds_in[7:0];
+      else 
+         buttons <= buttons_out;
+			
+		// latch data_out to simulate the way memory serves data
+		// Namely, provide data one cycle after the address is recieved
+		if (address_in[14:0] == SENSOR_ADDRESS)
+			data_out <= sensor;
+		else if (address_in[14:0] == BUTTON_ADDRESS)
+			data_out <= buttons;
+		else
+			data_out <= 16'b0;
     end
 
 
